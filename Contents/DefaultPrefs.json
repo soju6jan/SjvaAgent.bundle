@@ -1,0 +1,20 @@
+[
+	{
+		"id": "server",
+		"label": "SJVA 주소. DDNS만 입력. 끝에 / 삭제",
+		"type": "text",
+		"default": ""
+	},
+	{
+		"id": "apikey",
+		"label": "SJVA APIKEY. APIKEY 사용시만 입력",
+		"type": "text",
+		"default": ""
+	},
+	{
+		"id": "timeout",
+		"label": "URL 요청 timeout",
+		"type": "text",
+		"default": "3000"
+	}
+]
