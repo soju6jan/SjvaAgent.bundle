@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 @route('/version') 
 def version():
-    return '2020-12-26'
+    from .version import VERSION
+    return VERSION
 
 def Start():
     HTTP.Headers['Accept'] = 'text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
