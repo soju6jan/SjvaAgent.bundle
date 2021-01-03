@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata
+import os, traceback, json, urllib, re, unicodedata, time
 from functools import wraps
 
 """
@@ -11,6 +11,11 @@ class MetadataSearchResult(XMLObject):
 
 
 class AgentBase(object):
+    key_map = {
+        'com.plexapp.agents.sjva_agent_jav_censored' : 'C',
+        'com.plexapp.agents.sjva_agent_jav_censored_ama' : 'D',
+        'com.plexapp.agents.sjva_agent_ott_movie' : 'O',
+    }
 
     def try_except(original_function):
         @wraps(original_function)
@@ -25,11 +30,12 @@ class AgentBase(object):
     def get_search_keyword(self, media, manual, from_file=False):
         try:
             Log('## AgentBase ## get_search_keyword ## media:%s, manual:%s, from_file:%s' % (media.name, manual, from_file))
+           
             if manual:
                 ret = unicodedata.normalize('NFKC', unicode(media.name)).strip()
             else:
                 if from_file:
-                    data = JSON.ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+                    data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
                     filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
                     ret = os.path.splitext(os.path.basename(filename))[0]
                     ret = re.sub('\s*\[.*?\]', '', ret).strip()
@@ -47,7 +53,7 @@ class AgentBase(object):
 
     def send_search(self, module_name, keyword, manual):
         try:
-            url = '{ddns}/metadata/api/{module_name}/search?keyword={keyword}&manual={manual}&apikey={apikey}'.format(
+            url = '{ddns}/metadata/api/{module_name}/search?keyword={keyword}&manual={manual}&call=plex&apikey={apikey}'.format(
               ddns=Prefs['server'],
               module_name=module_name,
               keyword=urllib.quote(keyword.encode('utf8')),
@@ -55,7 +61,7 @@ class AgentBase(object):
               apikey=Prefs['apikey']
             )
             Log(url)
-            return JSON.ObjectFromURL(url, timeout=int(Prefs['timeout']))
+            return AgentBase.my_JSON_ObjectFromURL(url)
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
@@ -63,14 +69,14 @@ class AgentBase(object):
 
     def send_info(self, module_name, code):
         try:
-            url = '{ddns}/metadata/api/{module_name}/info?code={code}&apikey={apikey}'.format(
+            url = '{ddns}/metadata/api/{module_name}/info?code={code}&call=plex&apikey={apikey}'.format(
               ddns=Prefs['server'],
               module_name=module_name,
               code=urllib.quote(code.encode('utf8')),
               apikey=Prefs['apikey']
             )
             Log(url)
-            return JSON.ObjectFromURL(url, timeout=int(Prefs['timeout']))
+            return AgentBase.my_JSON_ObjectFromURL(url)
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
@@ -94,7 +100,7 @@ class AgentBase(object):
                 title = '{} / {}'.format(item['ui_code'], item['site'])
                 year = ''
             meta = MetadataSearchResult(id=item['code'], name=title, year=year, score=item['score'], thumb=item['image_url'], lang=lang)
-            meta.summary = item['title_ko']
+            meta.summary = self.change_html(item['title_ko'])
             meta.type = "movie"
             results.Append(meta)
 
@@ -102,7 +108,7 @@ class AgentBase(object):
     def base_update(self, metadata, media, lang):
         Log("UPDATE : %s" % metadata.id)
         data = self.send_info(self.module_name, metadata.id)
-        Log(json.dumps(data, indent=4))
+        #Log(json.dumps(data, indent=4))
         metadata.title = self.change_html(data['title'])
         metadata.original_title = metadata.title_sort = data['originaltitle']
         metadata.year = data['year']
@@ -115,11 +121,13 @@ class AgentBase(object):
         metadata.tagline = self.change_html(data['tagline'])
         metadata.content_rating = data['mpaa']
         try:
-            #metadata.rating = float(data['ratings'][0]['value']) * 2
-            #metadata.rating_image= data['ratings'][0]['image_url']
-            #metadata.rating_image = 'imdb://image.rating'
-            metadata.audience_rating = float(data['ratings'][0]['value']) * 2
-            metadata.audience_rating_image = 'rottentomatoes://image.rating.upright'
+            if data['ratings'] is not None and len(data['ratings']) > 0:
+                if data['ratings'][0]['max'] == 5:
+                    metadata.rating = float(data['ratings'][0]['value']) * 2
+                    #metadata.rating_image= data['ratings'][0]['image_url']
+                    #metadata.rating_image = 'imdb://image.rating'
+                    #metadata.audience_rating = float(data['ratings'][0]['value']) * 2
+                    #metadata.audience_rating_image = 'rottentomatoes://image.rating.upright'
 
         except Exception as exception: 
             Log('Exception:%s', exception)
@@ -153,7 +161,7 @@ class AgentBase(object):
         if data['tag'] is not None:
             metadata.collections.clear()
             for item in data['tag']:
-                metadata.collections.add(item)
+                metadata.collections.add(self.change_html(item))
 
         if data['director'] is not None:
             metadata.directors.clear()
@@ -172,10 +180,46 @@ class AgentBase(object):
             for item in data['extras']:
                 if item['mode'] == 'mp4':
                     url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
-                metadata.extras.add(TrailerObject(url=url, title=data['extras'][0]['title'],originally_available_at=metadata.originally_available_at, thumb=landscape))
+                metadata.extras.add(TrailerObject(url=url, title=self.change_html(data['extras'][0]['title']), originally_available_at=metadata.originally_available_at, thumb=landscape))
         return
 
 
+    
+
+    @staticmethod
+    def get_key(media):
+        try:
+            Log('...............................')
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+            section_id = str(data['MediaContainer']['librarySectionID'])
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/sections')
+            
+            for item in data['MediaContainer']['Directory']:
+                if item['key'] == section_id:
+                    return AgentBase.key_map[item['agent']]
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+
+
+    @staticmethod
+    def my_JSON_ObjectFromURL(url, timeout=None, retry=3):
+        try:
+            if timeout is None:
+                timeout = int(Prefs['timeout'])
+            Log('my_JSON_ObjectFromURL retry : %s, url : %s', retry, url)
+            return JSON.ObjectFromURL(url, timeout=timeout)
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+            if retry > 0:
+                time.sleep(1)
+                Log('RETRY : %s', retry)
+                return AgentBase.my_JSON_ObjectFromURL(url, timeout, retry=(retry-1))
+            else:
+                Log('CRITICAL my_JSON_ObjectFromURL error') 
+    
+    
     """
     LyricFind.bundle/Contents/Code/__init__.py:      metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = 'lrc', sort_order=sort_order)
 ./LyricFind.bundle/Contents/Code/__init__.py:    metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = 'txt', sort_order=sort_order)

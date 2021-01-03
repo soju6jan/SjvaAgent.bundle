@@ -12,4 +12,25 @@ def Start():
 #from .music import SjvaAgentArtist
 #from .music import SjvaAgentAlbum
 
-from .agent_jav_censored import AgentJavCensored
+
+
+tmp = Prefs['show_movie']
+
+Log('1111111111')
+Log(tmp)
+
+
+#from .agent_jav_censored import AgentJavCensored
+from .agent_movie import AgentMovie
+
+
+"""
+if tmp == 'Jav Censored':
+    from .agent_jav_censored import AgentJavCensored
+    from .agent_jav_censored_ama import AgentJavCensoredAma
+    
+elif tmp == 'Jav Censored Ama':
+    from .agent_jav_censored_ama import AgentJavCensoredAma
+    from .agent_jav_censored import AgentJavCensored
+"""
+
