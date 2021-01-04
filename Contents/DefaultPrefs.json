@@ -16,15 +16,5 @@
 		"label": "URL 요청 timeout",
 		"type": "text",
 		"default": "3000"
-	},
-	{
-		"id": "show_movie",
-		"label": "에이전트 선택 나올 영화 에이전트",
-		"type": "enum",
-		"values": [
-		  "Jav Censored",
-		  "Jav Censored Ama"
-		],
-		"default": "Jav Censored"
 	}
 ]
