@@ -11,6 +11,7 @@ def Start():
 
 
 from .agent_movie import AgentMovie
+from .agent_show import AgentShow
 
 
 """

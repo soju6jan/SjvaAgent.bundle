@@ -111,12 +111,15 @@ class AgentBase(object):
         #Log(json.dumps(data, indent=4))
         metadata.title = self.change_html(data['title'])
         metadata.original_title = metadata.title_sort = data['originaltitle']
-        metadata.year = data['year']
+        try: metadata.year = data['year']
+        except: pass
         try: metadata.duration = data['runtime']*60
         except: pass
         metadata.studio = data['studio']
         metadata.summary = self.change_html(data['plot'])
-        metadata.originally_available_at = Datetime.ParseDate(data['premiered']).date()
+        Log(data['premiered'])
+        if 'premiered' in data and data['premiered'] is not None and len(data['premiered']) == 10 and data['premiered'] != '0000-00-00':
+            metadata.originally_available_at = Datetime.ParseDate(data['premiered']).date()
         metadata.countries = data['country']
         metadata.tagline = self.change_html(data['tagline'])
         metadata.content_rating = data['mpaa']
