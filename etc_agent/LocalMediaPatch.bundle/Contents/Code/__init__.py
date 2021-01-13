@@ -55,7 +55,7 @@ class localMediaMovie(Agent.Movies):
   languages = [Locale.Language.NoLanguage]
   primary_provider = False
   persist_stored_files = False
-  contributes_to = ['com.plexapp.agents.imdb', 'com.plexapp.agents.none', 'com.plexapp.agents.sjva_agent', 'com.plexapp.agents.sj_daum', 'com.plexapp.agents.k_movie']
+  contributes_to = ['com.plexapp.agents.imdb', 'com.plexapp.agents.none', 'com.plexapp.agents.sjva_agent', 'com.plexapp.agents.sj_daum', 'com.plexapp.agents.k_movie', 'com.plexapp.agents.xbmcnfo', 'com.plexapp.agents.themoviedb']
   
   def search(self, results, media, lang):
     results.Append(MetadataSearchResult(id = 'null', score = 100))
@@ -103,9 +103,9 @@ def FindUniqueSubdirs(dirs):
 class localMediaTV(Agent.TV_Shows):
   name = 'Local Media Assets (TV) Patch'
   languages = [Locale.Language.NoLanguage]
-  primary_provider = False   sj_daum
+  primary_provider = False
   persist_stored_files = False
-  contributes_to = ['com.plexapp.agents.thetvdb', 'com.plexapp.agents.none', 'com.plexapp.agents.sjva_agent', 'com.plexapp.agents.sj_daum', 'com.plexapp.agents.k_tvdb']
+  contributes_to = ['com.plexapp.agents.thetvdb', 'com.plexapp.agents.none', 'com.plexapp.agents.sjva_agent', 'com.plexapp.agents.sj_daum', 'com.plexapp.agents.k_tvdb', 'com.plexapp.agents.xbmcnfotv', 'com.plexapp.agents.themoviedb']
 
   def search(self, results, media, lang):
     results.Append(MetadataSearchResult(id = 'null', score = 100))
