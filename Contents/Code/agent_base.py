@@ -2,6 +2,7 @@
 import os, traceback, json, urllib, re, unicodedata, time
 from functools import wraps
 
+
 """
 class MetadataSearchResult(XMLObject):
   def __init__(self, core, id, name=None, year=None, score=0, lang=None, thumb=None):
@@ -15,7 +16,25 @@ class AgentBase(object):
         'com.plexapp.agents.sjva_agent_jav_censored' : 'C',
         'com.plexapp.agents.sjva_agent_jav_censored_ama' : 'D',
         'com.plexapp.agents.sjva_agent_ott_movie' : 'O',
+        'com.plexapp.agents.sjva_agent_ktv' : 'K',
     }
+
+
+    extra_map = {
+        'Trailer' : TrailerObject,
+        'DeletedScene' : DeletedSceneObject,
+        'BehindTheScenes' : BehindTheScenesObject, 
+        'Interview' : InterviewObject, 
+        'SceneOrSample' : SceneOrSampleObject,
+        'Featurette' : FeaturetteObject,
+        'Short' : ShortObject,
+        'Other' : OtherObject
+    }
+    
+    def search_result_line(self):
+        text = ' ' + ' '.ljust(80, "=") + ' '
+        return text
+
 
     def try_except(original_function):
         @wraps(original_function)
@@ -29,7 +48,7 @@ class AgentBase(object):
 
     def get_search_keyword(self, media, manual, from_file=False):
         try:
-            Log('## AgentBase ## get_search_keyword ## media:%s, manual:%s, from_file:%s' % (media.name, manual, from_file))
+            Log('## AgentBase ## get_search_keyword ## media.name:%s, manual:%s, from_file:%s' % (media.name, manual, from_file))
            
             if manual:
                 ret = unicodedata.normalize('NFKC', unicode(media.name)).strip()
@@ -67,9 +86,26 @@ class AgentBase(object):
             Log(traceback.format_exc())
     
 
-    def send_info(self, module_name, code):
+    def send_info(self, module_name, code, title=None):
         try:
             url = '{ddns}/metadata/api/{module_name}/info?code={code}&call=plex&apikey={apikey}'.format(
+              ddns=Prefs['server'],
+              module_name=module_name,
+              code=urllib.quote(code.encode('utf8')),
+              apikey=Prefs['apikey']
+            )
+            if title is not None:
+                url += '&title=' + urllib.quote(title.encode('utf8'))
+            Log(url)
+            return AgentBase.my_JSON_ObjectFromURL(url)
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+
+
+    def send_episode_info(self, module_name, code):
+        try:
+            url = '{ddns}/metadata/api/{module_name}/episode_info?code={code}&call=plex&apikey={apikey}'.format(
               ddns=Prefs['server'],
               module_name=module_name,
               code=urllib.quote(code.encode('utf8')),
@@ -103,6 +139,7 @@ class AgentBase(object):
             meta.summary = self.change_html(item['title_ko'])
             meta.type = "movie"
             results.Append(meta)
+
 
 
     def base_update(self, metadata, media, lang):
@@ -189,6 +226,9 @@ class AgentBase(object):
 
     
 
+
+
+
     @staticmethod
     def get_key(media):
         try:
@@ -221,6 +261,8 @@ class AgentBase(object):
                 return AgentBase.my_JSON_ObjectFromURL(url, timeout, retry=(retry-1))
             else:
                 Log('CRITICAL my_JSON_ObjectFromURL error') 
+    
+
     
     
     """

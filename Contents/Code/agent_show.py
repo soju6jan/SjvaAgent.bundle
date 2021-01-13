@@ -1,23 +1,11 @@
 # -*- coding: utf-8 -*-
 import os, traceback, json, urllib, re, unicodedata
 from .agent_base import AgentBase
-from .module_ott_movie import ModuleOttMovie
-
-class ModuleKtv(AgentBase):
-    module_name = 'ktv'
-    
-    def search(self, results, media, lang, manual):
-        keyword = self.get_search_keyword(media, manual, from_file=True)
-        keyword = keyword.replace(' ', '-')
-        self.base_search(results, media, lang, manual, keyword)
-
-    def update(self, metadata, media, lang):
-        self.base_update(metadata, media, lang)
-
+from .module_ktv import ModuleKtv
 
 
 class AgentShow(Agent.TV_Shows):
-    name = "SJVA Show (Do not Select)"
+    name = "SJVA Show (선택하지 마세요)"
     languages = [Locale.Language.Korean]
     primary_provider = True
     accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.xbmcnfo']
@@ -37,4 +25,7 @@ class AgentShow(Agent.TV_Shows):
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
 
 
-
+        # Get episode data
+        @parallelize
+        def UpdateEpisodes():
+            Log('zzzzzzzzzzzzzzzzzzzzzzzzz')
