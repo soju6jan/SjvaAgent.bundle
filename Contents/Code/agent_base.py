@@ -185,12 +185,12 @@ class AgentBase(object):
         landscape = None
         for item in data['thumb']:
             if item['aspect'] == 'poster':
-                try: metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content)
+                try: metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
                 except: pass
             if item['aspect'] == 'landscape':
                 if data['plex_is_landscape_to_art']:
                     landscape = item['value']
-                    try: metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content)
+                    try: metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
                     except: pass
         
         if data['genre'] is not None:
