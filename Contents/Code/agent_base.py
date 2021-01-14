@@ -13,10 +13,19 @@ class MetadataSearchResult(XMLObject):
 
 class AgentBase(object):
     key_map = {
-        'com.plexapp.agents.sjva_agent_jav_censored' : 'C',
-        'com.plexapp.agents.sjva_agent_jav_censored_ama' : 'D',
+        'com.plexapp.agents.sjva_agent_jav_censored' : 'C',         # C : censored dvd
+        'com.plexapp.agents.sjva_agent_jav_censored_ama' : 'D',     # D : censored ama
+        # E : uncensored 
+        # F : western
+        # G : fc2
+        'com.plexapp.agents.sjva_agent_ktv' : 'K',                  # K : 국내TV
+        # L : FTV
+        # A : ani
         'com.plexapp.agents.sjva_agent_ott_movie' : 'O',
-        'com.plexapp.agents.sjva_agent_ktv' : 'K',
+        'com.plexapp.agents.sjva_agent_ott_show' : 'P',
+        # M : 영화
+        # X : 앨범
+        # Y : 아티스트
     }
 
 

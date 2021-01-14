@@ -2,6 +2,7 @@
 import os, traceback, json, urllib, re, unicodedata
 from .agent_base import AgentBase
 from .module_ott_movie import ModuleOttMovie
+from .module_ott_show import ModuleOttShow
 
 class AgentJavCensored(AgentBase):
     module_name = 'jav_censored'
@@ -30,7 +31,7 @@ class AgentJavCensoredAma(AgentBase):
 
 
 class AgentMovie(Agent.Movies):
-    name = "SJVA Movie (Do not Select)"
+    name = "SJVA 설정"
     languages = [Locale.Language.Korean]
     primary_provider = True
     accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.xbmcnfo']
@@ -40,6 +41,7 @@ class AgentMovie(Agent.Movies):
         'C' : AgentJavCensored(), 
         'D' : AgentJavCensoredAma(), 
         'O' : ModuleOttMovie(), 
+        'P' : ModuleOttShow(),
     }
 
     def search(self, results, media, lang, manual):

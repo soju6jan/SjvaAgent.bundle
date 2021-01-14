@@ -5,7 +5,7 @@ from .module_ktv import ModuleKtv
 
 
 class AgentShow(Agent.TV_Shows):
-    name = "SJVA Show (선택하지 마세요)"
+    name = "SJVA 설정"
     languages = [Locale.Language.Korean]
     primary_provider = True
     accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.xbmcnfo']
@@ -23,7 +23,8 @@ class AgentShow(Agent.TV_Shows):
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
-
+        import local_tv_extras
+        local_tv_extras.update(metadata, media)
 
         # Get episode data
         @parallelize

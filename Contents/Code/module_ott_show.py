@@ -3,33 +3,15 @@ import os, traceback, json, urllib, re, unicodedata, urllib2
 from .agent_base import AgentBase
 
 
-class ModuleKtv(AgentBase):
-    module_name = 'ktv'
-    
-
-    def get_year(self, media):
-        try:
-            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
-            # 시즌
-            Log(json.dumps(data, indent=4))
-            filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
-            ret = os.path.splitext(os.path.basename(filename))[0]
-            match = Regex(r'(?P<date>\d{6})').search(ret) 
-            if match:
-                return match.group('date')
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
-
-
+class ModuleOttShow(AgentBase):
+    module_name = 'ott_show'
 
     def search(self, results, media, lang, manual):
         try:
-            Log('SEARCH : %s' % media.show)
-            keyword = media.show
-            Log('>> %s : %s' % (self.module_name, keyword))
+            keyword = self.get_search_keyword(media, manual, from_file=True)
+            keyword = keyword.replace(' ', '-')
 
-            #Log(self.get_year(media))
+            Log('SEARCH : %s' % keyword)
 
             search_data = self.send_search(self.module_name, keyword, manual)
 
@@ -37,60 +19,7 @@ class ModuleKtv(AgentBase):
                 return
             Log(json.dumps(search_data, indent=4))
 
-            if 'daum' in search_data:
-                data = search_data['daum']
-                flag_media_season = False
-                if len(media.seasons) > 1:
-                    for media_season_index in media.seasons:
-                        if int(media_season_index) > 1 and int(media_season_index) < 1900:
-                            flag_media_season = True
-                            break
-
-                # 미디어도 시즌, 메타도 시즌 
-                if flag_media_season and len(data['series']) > 1:
-                    # 마지막 시즌 ID
-                    results.Append(MetadataSearchResult(
-                        id=data['series'][-1]['code'], 
-                        name=u'%s | 시리즈' % media.show, 
-                        year=data['series'][-1]['year'], 
-                        score=100, lang=lang)
-                    )
-
-                # 미디어 단일, 메타 시즌
-                elif len(data['series']) > 1:
-                    #reversed
-                    for index, series in enumerate(reversed(data['series'])):
-                        Log(index)
-                        Log(series)
-                        if series['year'] is not None:
-                            score = 95-(index*5)
-                            if media.year == series['year']:
-                                score = 100
-                            if score < 20:
-                                score = 20
-                            if 'status' in series and series['status'] == 0:
-                                score += -40
-                            results.Append(MetadataSearchResult(id=series['code'], name=series['title'], year=series['year'], score=score, lang=lang))
-                # 미디어 단일, 메타 단일 or 미디어 시즌, 메타 단일
-                else:
-                    # 2019-05-23 미리보기 에피들이 많아져서 그냥 방송예정도 선택되게.
-                    #if data['status'] != 0:
-                    meta = MetadataSearchResult(id=data['code'], name=data['title'], year=data['year'], thumb=data['image_url'], score=100, lang=lang)
-                    tmp = data['extra_info'] + ' '
-                    if data['status'] == 0:
-                        tmp += u'방송예정'
-                    elif data['status'] == 1:
-                        tmp += u'방송중'
-                    elif data['status'] == 2:
-                        tmp += u'방송종료'
-                    tmp += self.search_result_line() + data['desc']
-                    meta.summary = tmp
-                    meta.type = 'movie'
-                    results.Append(meta)
-
-                if 'equal_name' in data:
-                    for index, program in enumerate(data['equal_name']):
-                        results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=80 - (index*5), lang=lang))
+            
             def func(show_list):
                 for idx, item in enumerate(show_list):
                     meta = MetadataSearchResult(id=item['code'], name=item['title'], score=item['score'], thumb=item['image_url'], lang=lang)
@@ -101,8 +30,6 @@ class ModuleKtv(AgentBase):
                 func(search_data['tving'])
             if 'wavve' in search_data:
                 func(search_data['wavve'])
-
-                
 
         except Exception as e: 
             Log('Exception:%s', e)
