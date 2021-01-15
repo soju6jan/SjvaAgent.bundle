@@ -16,10 +16,10 @@ class AgentBase(object):
         'com.plexapp.agents.sjva_agent_jav_censored' : 'C',         # C : censored dvd
         'com.plexapp.agents.sjva_agent_jav_censored_ama' : 'D',     # D : censored ama
         # E : uncensored 
-        # F : western
+        # W : western
         # G : fc2
         'com.plexapp.agents.sjva_agent_ktv' : 'K',                  # K : 국내TV
-        # L : FTV
+        # F : FTV
         # A : ani
         'com.plexapp.agents.sjva_agent_ott_movie' : 'O',
         'com.plexapp.agents.sjva_agent_ott_show' : 'P',

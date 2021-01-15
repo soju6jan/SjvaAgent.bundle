@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-class SjvaAgentJavCensored(Agent.TV_Shows):
+class SjvaAgentKtv(Agent.TV_Shows):
     name = u'SJVA 국내TV (dummy)'
     
     fallback_agent = 'com.plexapp.agents.sjva_agent'
