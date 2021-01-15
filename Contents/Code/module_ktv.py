@@ -109,8 +109,8 @@ class ModuleKtv(AgentBase):
             Log(traceback.format_exc())
 
     def update_info(self, metadata, meta_info):
-        metadata.original_title = metadata.title
-        metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
+        #metadata.original_title = metadata.title
+        #metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
         metadata.studio = meta_info['studio']
         metadata.originally_available_at = Datetime.ParseDate(meta_info['premiered']).date()
         metadata.content_rating = meta_info['mpaa']
@@ -267,8 +267,6 @@ class ModuleKtv(AgentBase):
                 Log('search_code : %s', search_code)
 
                 meta_info = self.send_info(self.module_name, search_code, title=search_title)
-                Log('aaaaaaaaaaaaaaaaaaaaaaaaaaa')
-                Log(meta_info)
 
                 if flag_media_season:
                     metadata.title = media.title.split('|')[0].strip()
@@ -284,15 +282,11 @@ class ModuleKtv(AgentBase):
                 # Get episode data.
                 @parallelize
                 def UpdateEpisodes():
-                    Log('111111111111111111111111111')
                     for media_episode_index in media.seasons[media_season_index].episodes:
                         episode = metadata.seasons[media_season_index].episodes[media_episode_index]
 
                         @task
                         def UpdateEpisode(episode=episode, media_season_index=media_season_index, media_episode_index=media_episode_index):
-                            Log('EEEEEEEEEEEEEPISODE')
-                            Log(media_episode_index)
-
                             frequency = False
                             show_epi_info = None
                             if media_episode_index in meta_info['extra_info']['episodes']:
@@ -365,17 +359,6 @@ class ModuleKtv(AgentBase):
 
 
 
-
-def get_show_list(name, id=None):
-    try:
-        Log('get_show_list : %s %s', name, id)
-        url = 'https://search.daum.net/search?q=%s' % (urllib.quote(name.encode('utf8')))
-        Log(url)
-        root = HTML.ElementFromURL(url)
-        return DaumTV.get_show_info_on_home(root)
-    except Exception as e:
-        Log('Exception:%s', e)
-        Log(traceback.format_exc())
 
 class PutRequest(urllib2.Request):
     def __init__(self, *args, **kwargs):
