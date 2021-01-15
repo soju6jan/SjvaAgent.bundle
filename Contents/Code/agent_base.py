@@ -146,7 +146,15 @@ class AgentBase(object):
                 Log('CRITICAL my_JSON_ObjectFromURL error') 
     
 
-    
+    def get_keyword_from_file(self, media):
+        try:
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+            filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+            ret = os.path.splitext(os.path.basename(filename))[0]
+            return ret
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
     
     """
     LyricFind.bundle/Contents/Code/__init__.py:      metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = 'lrc', sort_order=sort_order)

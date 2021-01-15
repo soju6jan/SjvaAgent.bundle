@@ -26,7 +26,4 @@ class AgentShow(Agent.TV_Shows):
         import local_tv_extras
         local_tv_extras.update(metadata, media)
 
-        # Get episode data
-        @parallelize
-        def UpdateEpisodes():
-            Log('zzzzzzzzzzzzzzzzzzzzzzzzz')
+        

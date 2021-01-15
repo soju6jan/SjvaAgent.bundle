@@ -66,6 +66,34 @@ def MediaObjectsForURL(url):
             part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
             part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
             return [MediaObject(parts=[part], protocol='hls', container='mpegts', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
+        
+        elif url.find('/ott/') != -1:
+            url = url.split('/ott/')[1]
+            """
+            part = PartObject(key=Callback(PlayVideoOtt, url=url), protocol='hls', container='mp4', optimized_for_streaming=True)
+            part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
+            part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
+            return [MediaObject(parts=[part], container='mp4', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
+            """
+            return [
+                MediaObject(
+                    parts = [
+                        PartObject(
+                            key = Callback(PlayVideoOtt, url=url),
+                            protocol='hls', 
+                            container='mp4', 
+                            optimized_for_streaming=True
+                        )
+                    ],
+                    container='mp4', 
+                    video_codec=VideoCodec.H264, 
+                    audio_codec=AudioCodec.AAC,
+                    optimized_for_streaming = True,
+                )
+            ]
+            # 컨테이너 상관없음.프로토콜 없어도 됨.
+
+
     except Exception as e: 
         Log('Exception:%s', e)
         Log(traceback.format_exc())
@@ -78,4 +106,23 @@ def PlayVideoKakao(url, **kwargs):
     data = JSON.ObjectFromURL(url)
     video_url = data['videoLocation']['url']
     return IndirectResponse(VideoClipObject, key=video_url)
+
+@indirect
+def PlayVideoOtt(url, **kwargs):
+    data = JSON.ObjectFromURL(url)
+    if data['site'] == 'tving':
+        video_url = data['url']
+    elif data['site'] == 'wavve':
+        url = data['url']
+        data = JSON.ObjectFromURL(url)
+        video_url = data['playurl'].replace('chunklist5000.m3u8', '5000/chunklist.m3u8')
+    return IndirectResponse(VideoClipObject, key=video_url)
+    #return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(video_url))
+        
+
+
+    
+
+
+    
 
