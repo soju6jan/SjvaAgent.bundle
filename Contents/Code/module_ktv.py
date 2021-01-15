@@ -145,7 +145,7 @@ class ModuleKtv(AgentBase):
                 Log('%s - %s'% (actor.name, actor.photo))
 
         # poster
-        ProxyClass = Proxy.Preview if meta_info['plex_is_proxy_preview'] else Proxy.media
+        ProxyClass = Proxy.Preview
         valid_names = []
         season_valid_names = []
         poster_index = art_index = banner_index = 0
