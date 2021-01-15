@@ -108,13 +108,14 @@ class ModuleKtv(AgentBase):
             Log('Exception:%s', e)
             Log(traceback.format_exc())
 
-    def update_info(self, metadata, meta_info):
+    def update_info(self, metadata, metadata_season,  meta_info):
         #metadata.original_title = metadata.title
         #metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
         metadata.studio = meta_info['studio']
         metadata.originally_available_at = Datetime.ParseDate(meta_info['premiered']).date()
         metadata.content_rating = meta_info['mpaa']
         metadata.summary = meta_info['plot']
+        metadata_season.summary = metadata.summary
         metadata.genres.clear()
         for tmp in meta_info['genre']:
             metadata.genres.add(tmp)
@@ -141,24 +142,32 @@ class ModuleKtv(AgentBase):
                 actor.role = item['role']
                 actor.name = item['name']
                 actor.photo = item['thumb']
+                Log('%s - %s'% (actor.name, actor.photo))
 
         # poster
         ProxyClass = Proxy.Preview if meta_info['plex_is_proxy_preview'] else Proxy.media
         valid_names = []
+        season_valid_names = []
         poster_index = art_index = banner_index = 0
         for item in sorted(meta_info['thumb'], key=lambda k: k['score'], reverse=True):
             valid_names.append(item['value'])
             if item['aspect'] == 'poster':
                 if item['thumb'] == '':
                     metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
+                    metadata_season.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
                 else:
                     metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
+                    metadata_season.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
+                season_valid_names.append(item['value'])
                 poster_index += 1
             elif item['aspect'] == 'landscape':
                 if item['thumb'] == '':
                     metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
+                    metadata_season.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
                 else:
                     metadata.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
+                    metadata_season.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
+                season_valid_names.append(item['value'])
                 art_index += 1
             elif item['aspect'] == 'banner':
                 if item['thumb'] == '':
@@ -166,10 +175,11 @@ class ModuleKtv(AgentBase):
                 else:
                     metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1)
                 banner_index += 1
-
         metadata.posters.validate_keys(valid_names)
         metadata.art.validate_keys(valid_names)
         metadata.banners.validate_keys(valid_names)
+        metadata_season.posters.validate_keys(season_valid_names)
+        metadata_season.art.validate_keys(season_valid_names)
 
 
 
@@ -183,7 +193,6 @@ class ModuleKtv(AgentBase):
                 #if 'tving_id' in meta_info['extra_info']:
                 #    param += ('|' + 'V' + meta_info['extra_info']['tving_id'])
                 episode_info = self.send_episode_info(self.module_name, show_epi_info['daum']['code'])
-                Log(episode_info)
 
                 episode.originally_available_at = Datetime.ParseDate(episode_info['premiered']).date()
                 episode.title = episode_info['title']
@@ -258,15 +267,16 @@ class ModuleKtv(AgentBase):
                 search_title = media.title.replace(u'[종영]', '')
                 search_title = search_title.split('|')[0]
                 search_code = metadata.id            
-                if flag_media_season and len(search_data['series']) > 1:
-                    search_title = search_data['series'][int(media_season_index)-1]['title']
-                    search_code = search_data['series'][int(media_season_index)-1]['code']
+                if flag_media_season and len(search_data['daum']['series']) > 1:
+                    search_title = search_data['daum']['series'][int(media_season_index)-1]['title']
+                    search_code = search_data['daum']['series'][int(media_season_index)-1]['code']
 
                 Log('flag_media_season : %s', flag_media_season)
                 Log('search_title : %s', search_title)
                 Log('search_code : %s', search_code)
 
                 meta_info = self.send_info(self.module_name, search_code, title=search_title)
+                Log(json.dumps(meta_info, indent=4))
 
                 if flag_media_season:
                     metadata.title = media.title.split('|')[0].strip()
@@ -275,9 +285,10 @@ class ModuleKtv(AgentBase):
                 metadata.original_title = metadata.title                  
                 metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
                 
-                self.update_info(metadata, meta_info)
                 metadata_season = metadata.seasons[media_season_index]
-
+                self.update_info(metadata, metadata_season, meta_info)
+                
+                
                 # 포스터
                 # Get episode data.
                 @parallelize
@@ -317,10 +328,7 @@ class ModuleKtv(AgentBase):
                                 meta.role = item['role']
                                 meta.name = item['name']
                                 meta.photo = item['thumb']
-                            
-                            
-
-
+    
             # 시즌 title, summary
             if not flag_media_season:
                 return
