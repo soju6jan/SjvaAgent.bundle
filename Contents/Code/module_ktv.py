@@ -181,7 +181,9 @@ class ModuleKtv(AgentBase):
         metadata_season.posters.validate_keys(season_valid_names)
         metadata_season.art.validate_keys(season_valid_names)
 
-
+        if 'themes' in meta_info['extra_info']:
+            for tmp in meta_info['extra_info']['themes']:
+                metadata.themes[tmp] = Proxy.Media(HTTP.Request(tmp).content)
 
 
 
