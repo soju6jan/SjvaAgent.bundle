@@ -4,6 +4,7 @@ from .agent_base import AgentBase
 from .module_jav_censored import ModuleJavCensoredDvd, ModuleJavCensoredAma
 from .module_ott_movie import ModuleOttMovie
 from .module_ott_show import ModuleOttShow
+from .module_movie import ModuleMovie
 
 
 
@@ -19,6 +20,7 @@ class AgentMovie(Agent.Movies):
         'D' : ModuleJavCensoredAma(), 
         'O' : ModuleOttMovie(), 
         'P' : ModuleOttShow(),
+        'M' : ModuleMovie(),
     }
 
     def search(self, results, media, lang, manual):

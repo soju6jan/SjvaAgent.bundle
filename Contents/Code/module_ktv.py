@@ -269,7 +269,7 @@ class ModuleKtv(AgentBase):
                 search_title = media.title.replace(u'[종영]', '')
                 search_title = search_title.split('|')[0]
                 search_code = metadata.id            
-                if flag_media_season and len(search_data['daum']['series']) > 1:
+                if flag_media_season and 'daum' in search_data and len(search_data['daum']['series']) > 1:
                     search_title = search_data['daum']['series'][int(media_season_index)-1]['title']
                     search_code = search_data['daum']['series'][int(media_season_index)-1]['code']
 

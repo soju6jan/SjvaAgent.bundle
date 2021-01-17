@@ -23,7 +23,7 @@ class AgentBase(object):
         # A : ani
         'com.plexapp.agents.sjva_agent_ott_movie' : 'O',
         'com.plexapp.agents.sjva_agent_ott_show' : 'P',
-        # M : 영화
+        'com.plexapp.agents.sjva_agent_movie' : 'M',            # M : 영화
         # X : 앨범
         # Y : 아티스트
     }
@@ -58,13 +58,14 @@ class AgentBase(object):
     
 
 
-    def send_search(self, module_name, keyword, manual):
+    def send_search(self, module_name, keyword, manual, year=''):
         try:
-            url = '{ddns}/metadata/api/{module_name}/search?keyword={keyword}&manual={manual}&call=plex&apikey={apikey}'.format(
+            url = '{ddns}/metadata/api/{module_name}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}'.format(
               ddns=Prefs['server'],
               module_name=module_name,
               keyword=urllib.quote(keyword.encode('utf8')),
               manual=manual,
+              year=year,
               apikey=Prefs['apikey']
             )
             Log(url)
