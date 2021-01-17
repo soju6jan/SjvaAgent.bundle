@@ -93,6 +93,23 @@ def MediaObjectsForURL(url):
             ]
             # 컨테이너 상관없음.프로토콜 없어도 됨.
 
+        elif url.find('/youtube/') != -1:
+            return [
+                MediaObject(
+                    parts = [
+                        PartObject(
+                            key = Callback(PlayVideoYoutube, url=url.split('/youtube/')[1]),
+                            protocol='hls', 
+                            container='mpegts', 
+                            optimized_for_streaming=True
+                        )
+                    ],
+                    container='mpegts', 
+                    video_codec=VideoCodec.H264, 
+                    audio_codec=AudioCodec.AAC,
+                    optimized_for_streaming = True,
+                )
+            ]
 
     except Exception as e: 
         Log('Exception:%s', e)
@@ -118,6 +135,15 @@ def PlayVideoOtt(url, **kwargs):
         video_url = data['playurl'].replace('chunklist5000.m3u8', '5000/chunklist.m3u8')
     return IndirectResponse(VideoClipObject, key=video_url)
     #return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(video_url))
+        
+
+@indirect
+def PlayVideoYoutube(url, **kwargs):
+    data = JSON.ObjectFromURL(url)
+    video_url = data['url']
+    Log('111111111111111111')
+    Log(video_url)
+    return IndirectResponse(VideoClipObject, key=video_url)
         
 
 

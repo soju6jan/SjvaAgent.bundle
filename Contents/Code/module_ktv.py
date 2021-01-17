@@ -112,7 +112,8 @@ class ModuleKtv(AgentBase):
         #metadata.original_title = metadata.title
         #metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
         metadata.studio = meta_info['studio']
-        metadata.originally_available_at = Datetime.ParseDate(meta_info['premiered']).date()
+        try: metadata.originally_available_at = Datetime.ParseDate(meta_info['premiered']).date()
+        except: pass
         metadata.content_rating = meta_info['mpaa']
         metadata.summary = meta_info['plot']
         metadata_season.summary = metadata.summary
