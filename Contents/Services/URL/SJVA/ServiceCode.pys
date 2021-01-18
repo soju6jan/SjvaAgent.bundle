@@ -26,8 +26,6 @@ def MediaObjectsForURL(url):
             url = url.split('/kakao.mp4/')[1]
             part = PartObject(key=Callback(PlayVideoKakao, url=url), container='mp4', optimized_for_streaming=True)
             #key = HTTPLiveStreamURL(Callback(PlayVideo, url=url))
-
-
             part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
             part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
             return [MediaObject(parts=[part], container='mp4', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
@@ -37,7 +35,7 @@ def MediaObjectsForURL(url):
             part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
             part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
             return [MediaObject(parts=[part], protocol='hls', container='mpegts', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
-        elif url.find('/redirect.m3u8/') != -1:
+        elif url.find('/111redirect.m3u8/') != -1:
             Log('bbbbbbbbbbbbbbbbb')
             url = url.split('/redirect.m3u8/')[1]
             #text = HTTP.Request(url).content
@@ -68,31 +66,21 @@ def MediaObjectsForURL(url):
             return [MediaObject(parts=[part], protocol='hls', container='mpegts', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
         
         elif url.find('/ott/') != -1:
-            url = url.split('/ott/')[1]
-            """
-            part = PartObject(key=Callback(PlayVideoOtt, url=url), protocol='hls', container='mp4', optimized_for_streaming=True)
-            part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
-            part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
-            return [MediaObject(parts=[part], container='mp4', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
-            """
             return [
                 MediaObject(
                     parts = [
                         PartObject(
-                            key = Callback(PlayVideoOtt, url=url),
-                            protocol='hls', 
-                            container='mp4', 
-                            optimized_for_streaming=True
+                            key=Callback(PlayVideoOtt, url=url.split('/ott/')[1]),
+                            container='mpegts', 
                         )
                     ],
-                    container='mp4', 
+                    #protocol="hls",
+                    container='mpegts', 
                     video_codec=VideoCodec.H264, 
                     audio_codec=AudioCodec.AAC,
                     optimized_for_streaming = True,
                 )
             ]
-            # 컨테이너 상관없음.프로토콜 없어도 됨.
-
         elif url.find('/youtube/') != -1:
             return [
                 MediaObject(
@@ -110,6 +98,93 @@ def MediaObjectsForURL(url):
                     optimized_for_streaming = True,
                 )
             ]
+        elif url.find('/request.mp4/') != -1:
+
+            part = PartObject(key=Callback(PlayVideoRequest, url=url.split('/request.mp4/')[1]), container='mp4', optimized_for_streaming=True, duration=30*1000)
+            part.streams.append(VideoStreamObject(codec=VideoCodec.H264, bitrate=2000, width=1920, height=720))
+            part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
+            return [MediaObject(parts=[part], container='mp4', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC, bitrate=4000, width=1920, height=720, duration=30*1000)]
+            
+            """
+            part = PartObject(key='/services/iva/assets/%s/video.mp4?bitrate=%d' % (iva_id, bitrate), container=Container.MP4, optimized_for_streaming=True, duration=duration*1000)
+            part.streams.append(VideoStreamObject(codec=VideoCodec.H264, bitrate=bitrate, width=width, height=height))
+            part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2, language_code=lang))
+            media.append(MediaObject(parts=[part], container=Container.MP4, video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC, duration=duration*1000, bitrate=bitrate, width=width, height=height))
+
+            return [
+                MediaObject(
+                    parts = [
+                        PartObject(
+                            key = Callback(PlayVideoRequest, url=url.split('/request.mp4/')[1]),
+                            #protocol = 'hls',
+                            container='mp4', 
+                            optimized_for_streaming=True
+                        )
+                    ],
+                    #protocol = 'hls', #이거 있으면 재생 x
+                    container='mp4', 
+                    video_codec=VideoCodec.H264, 
+                    audio_codec=AudioCodec.AAC,
+                    optimized_for_streaming = True,
+                )
+            ]
+            """
+
+
+        elif url.find('/redirect.m3u8/') != -1:
+            tmp = url.split('/redirect.m3u8/')[1]
+            mode, param = tmp.split('|')
+            if mode == 'tving':
+                redirect_url = param
+            elif mode == 'wavve':
+                import urllib
+                param = urllib.quote(param)
+                Log('3333333333333333333333333')
+                Log(param)
+                redirect_url = '/:/plugins/com.plexapp.agents.sjva_agent/function/wavve?sjva_url=%s' % param
+                #redirect_url = 'https://vod.cdn.wavve.com/hls/M01/M_1003704100074100000.1/2/chunklist5000.m3u8?authtoken=a5d-yfS36R7qLlgeDI_IW1OoQ0M6v-apk1oHukSjnmTsVF9aSckKf0xDKzFP2-yjLYWxwNTkIvvxZHRm_8kcLCe5yUh5B3TV7rk440x-nfTBvgJtFp3wp94zYGurWjwjMhkfBtbxQG7PKjGgwwLV1Lr85oG7v2n7AvcdnLrxbXS1cX-1x5pfyCtsh2wtmGIgSyD7LyqdneVZE3TcEp8'
+            Log('redirect_url : %s', redirect_url)
+            return [
+                MediaObject(
+                    parts = [
+                        PartObject(
+                            key=redirect_url,
+                            container='mpegts', 
+                        )
+                    ],
+                    protocol="hls",
+                    container='mpegts', 
+                    video_codec=VideoCodec.H264, 
+                    audio_codec=AudioCodec.AAC,
+                    optimized_for_streaming = True,
+                )
+            ]
+        elif url.find('/redirect.mp4/') != -1:
+            tmp = url.split('/redirect.mp4/')[1]
+            mode, param = tmp.split('|')
+            if mode == 'kakao':
+                redirect_url = '/:/plugins/com.plexapp.agents.sjva_agent/function/kakao?content_id=%s' % param
+            elif mode in ['naver']:
+                redirect_url = param
+            elif mode == 'wavve':
+                pass
+
+            Log('redirect_url : %s', redirect_url)
+            return [
+                MediaObject(
+                    parts = [
+                        PartObject(
+                            key=redirect_url,
+                            container='mp4', 
+                        )
+                    ],
+                    container='mp4', 
+                    video_codec=VideoCodec.H264, 
+                    audio_codec=AudioCodec.AAC,
+                    optimized_for_streaming = True,
+                )
+            ]
+
 
     except Exception as e: 
         Log('Exception:%s', e)
@@ -124,8 +199,14 @@ def PlayVideoKakao(url, **kwargs):
     video_url = data['videoLocation']['url']
     return IndirectResponse(VideoClipObject, key=video_url)
 
+
+
+
 @indirect
 def PlayVideoOtt(url, **kwargs):
+    Log('qqqqqqqqqqqqqqqqqqqqqqqqqqq')
+    Log(url)
+    url = url.split('|')[1]
     data = JSON.ObjectFromURL(url)
     if data['site'] == 'tving':
         video_url = data['url']
@@ -133,9 +214,10 @@ def PlayVideoOtt(url, **kwargs):
         url = data['url']
         data = JSON.ObjectFromURL(url)
         video_url = data['playurl'].replace('chunklist5000.m3u8', '5000/chunklist.m3u8')
+    Log(video_url)
     return IndirectResponse(VideoClipObject, key=video_url)
     #return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(video_url))
-        
+
 
 @indirect
 def PlayVideoYoutube(url, **kwargs):
@@ -145,10 +227,13 @@ def PlayVideoYoutube(url, **kwargs):
     Log(video_url)
     return IndirectResponse(VideoClipObject, key=video_url)
         
+@indirect
+def PlayVideoRequest(url, **kwargs):
+    data = JSON.ObjectFromURL(url)
+    video_url = data['url']
+    Log('222222222222222')
+    Log(video_url)
+    return IndirectResponse(VideoClipObject, key=video_url)
 
 
-    
-
-
-    
 

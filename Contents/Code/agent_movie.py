@@ -15,10 +15,10 @@ class AgentMovie(Agent.Movies):
     accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.xbmcnfo']
     contributes_to = ['com.plexapp.agents.xbmcnfo']
     
-    instance_list = {
+    instance_list = { 
         'C' : ModuleJavCensoredDvd(), 
         'D' : ModuleJavCensoredAma(), 
-        'O' : ModuleOttMovie(), 
+        'O' : ModuleOttMovie(),  
         'P' : ModuleOttShow(),
         'M' : ModuleMovie(),
     }

@@ -108,6 +108,7 @@ class ModuleKtv(AgentBase):
             Log('Exception:%s', e)
             Log(traceback.format_exc())
 
+
     def update_info(self, metadata, metadata_season,  meta_info):
         #metadata.original_title = metadata.title
         #metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
@@ -119,14 +120,14 @@ class ModuleKtv(AgentBase):
         metadata_season.summary = metadata.summary
         metadata.genres.clear()
         for tmp in meta_info['genre']:
-            metadata.genres.add(tmp)
+            metadata.genres.add(tmp) 
         
         # 부가영상
         for item in meta_info['extras']:
             if item['mode'] == 'mp4':
                 url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
             elif item['mode'] == 'kakao':
-                url = 'sjva://sjva.me/kakao.mp4/%s' % item['content_url']
+                url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
             metadata.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
 
         # rating
@@ -182,9 +183,28 @@ class ModuleKtv(AgentBase):
         metadata_season.posters.validate_keys(season_valid_names)
         metadata_season.art.validate_keys(season_valid_names)
 
+        # 테마
         if 'themes' in meta_info['extra_info']:
             for tmp in meta_info['extra_info']['themes']:
-                metadata.themes[tmp] = Proxy.Media(HTTP.Request(tmp).content)
+                if tmp not in metadata.themes:
+                    metadata.themes[tmp] = Proxy.Media(HTTP.Request(tmp).content)
+        
+        # 테마2
+        
+        # Get the TVDB id from the Movie Database Agent
+        if 'tmdb_id' in meta_info['extra_info']:
+            tvdb_id = Core.messaging.call_external_function(
+                'com.plexapp.agents.themoviedb',
+                'MessageKit:GetTvdbId',
+                kwargs = dict(
+                    tmdb_id = meta_info['extra_info']['tmdb_id']
+                )
+            )
+        Log('TVDB_ID : %s', tvdb_id)
+        THEME_URL = 'https://tvthemes.plexapp.com/%s.mp3'
+        if tvdb_id and THEME_URL % tvdb_id not in metadata.themes:
+            try: metadata.themes[THEME_URL % tvdb_id] = Proxy.Media(HTTP.Request(THEME_URL % tvdb_id))
+            except: pass
 
 
 

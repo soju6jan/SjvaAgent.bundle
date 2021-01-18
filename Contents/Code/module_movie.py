@@ -21,7 +21,7 @@ class ModuleMovie(AgentBase):
             search_data = self.send_search(self.module_name, movie_name, manual, year=movie_year)
 
             if search_data is None:
-                return
+                return 
 
             for item in search_data:
                 meta = MetadataSearchResult(id=item['code'], name=item['title'], year=item['year'], score=item['score'], thumb=item['image_url'], lang=lang)
@@ -54,11 +54,15 @@ class ModuleMovie(AgentBase):
             metadata.original_title = metadata.title
             metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
 
-            metadata.originally_available_at = Datetime.ParseDate(meta_info['premiered']).date()
-            metadata.year = meta_info['year']
+            try: 
+                metadata.originally_available_at = Datetime.ParseDate(meta_info['premiered']).date()
+                metadata.year = meta_info['year']
+            except: pass
+            
             metadata.content_rating = meta_info['mpaa']
             metadata.summary = meta_info['plot']
             metadata.studio = meta_info['studio']
+            metadata.tagline = meta_info['tagline']
             
             
             metadata.countries.clear()
@@ -76,7 +80,7 @@ class ModuleMovie(AgentBase):
                 if item['name'] == 'naver':
                     metadata.rating = item['value']
                     metadata.audience_rating = 0.0
-                    metadata.rating_image = 'rottentomatoes://image.rating.spilled'
+                    metadata.rating_image = 'rottentomatoes://image.rating.spilled' if item['value'] < 7 else 'rottentomatoes://image.rating.upright'
             
             # role
             metadata.roles.clear()
@@ -119,34 +123,46 @@ class ModuleMovie(AgentBase):
                
 
             metadata.posters.validate_keys(valid_names)
-            metadata.art.validate_keys(valid_names)
+            metadata.art.validate_keys(valid_names) 
             #metadata.banners.validate_keys(valid_names)
 
                 
 
             metadata.reviews.clear()
-            r = metadata.reviews.new()
-            r.author = 'author'
-            r.source = 'source'
-            r.image = 'rottentomatoes://image.review.fresh' if 'fresh' == 'fresh' else 'rottentomatoes://image.review.rotten'
-            r.link = 'https://sjva.me'
-            r.text = 'test'
-            
+            if 'making_note' in meta_info['extra_info']:
+                r = metadata.reviews.new()
+                r.author = '네이버'
+                r.source = '제작노트'
+                r.image = 'rottentomatoes://image.review.fresh' if 'fresh' == 'fresh' else 'rottentomatoes://image.review.rotten'
+                r.link = 'https://sjva.me'
+                r.text = meta_info['extra_info']['making_note']
+             
+            """
             youtube_id = '7tXniRliqNE'
             url = '{ddns}/metadata/api/youtube?youtube_id={youtube_id}&apikey={apikey}'.format(
                 ddns=Prefs['server'],
                 youtube_id=youtube_id,
                 apikey=Prefs['apikey']
             )
-
-            metadata.extras.add(
-                FeaturetteObject(
-                    url='sjva://sjva.me/youtube/%s' % (url), 
-                    title='1회. aaa',
-                    #thumb=info[site]['thumb'],
-                )
-            )
+            """
             
+
+            for extra in meta_info['extras']:
+                if extra['mode'] == 'naver':
+                    url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(
+                        ddns=Prefs['server'],
+                        site=extra['mode'],
+                        param=extra['content_url'],
+                        apikey=Prefs['apikey']
+                    )
+                    metadata.extras.add(
+                        self.extra_map[extra['content_type']](
+                            url='sjva://sjva.me/redirect.mp4/naver|%s' % (url), 
+                            title=extra['title'],
+                            thumb=extra['thumb'],
+                        )
+                    )
+ 
             
             return
 

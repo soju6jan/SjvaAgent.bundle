@@ -99,7 +99,6 @@ class ModuleOttShow(AgentBase):
 
             tmp = [int(x) for x in meta_info['extra_info']['episodes'].keys()]
             no_list = sorted(tmp, reverse=True)
-
             for no in no_list:
                 info = meta_info['extra_info']['episodes'][str(no)]
                 Log(no)      
@@ -107,13 +106,13 @@ class ModuleOttShow(AgentBase):
 
                 for site in ['tving', 'wavve']:
                     if site in info:
-                        url = '{ddns}/metadata/api/{module_name}/stream?code={code}&call=plex&apikey={apikey}'.format(
+                        url = '{ddns}/metadata/api/{module_name}/stream.m3u8?code={code}&call=plex&apikey={apikey}'.format(
                             ddns=Prefs['server'],
                             module_name=self.module_name,
                             code=info[site]['code'],
-                            apikey=Prefs['apikey']
+                            apikey=Prefs['apikey'],
                         )
-                        url = 'sjva://sjva.me/ott/%s' % (url)
+                        url = 'sjva://sjva.me/%s/%s|%s' % ('redirect.m3u8' if site=='tving' else 'ott', site, url)
                         title = info[site]['title'] if info[site]['title'] != '' else info[site]['plot']
                         metadata.extras.add(
                             FeaturetteObject(
