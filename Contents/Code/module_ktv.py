@@ -237,7 +237,7 @@ class ModuleKtv(AgentBase):
                     if item['mode'] == 'mp4':
                         url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
                     elif item['mode'] == 'kakao':
-                        url = 'sjva://sjva.me/kakao.mp4/%s' % item['content_url']
+                        url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
                     episode.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
             else:
                 ott_mode = 'full'

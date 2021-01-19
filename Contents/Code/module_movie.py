@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata
+import os, traceback, json, urllib, re, unicodedata, random
 from .agent_base import AgentBase
 
 class ModuleMovie(AgentBase):
@@ -7,11 +7,15 @@ class ModuleMovie(AgentBase):
     
     def search(self, results, media, lang, manual, **kwargs):
         try:
+            #if media.primary_metadata is not None and RE_IMDB_ID.search(media.primary_metadata.id):
+            #    #pendSearchResult(results=results, id=media.primary_metadata.id, score=100)
+            Log('vbvvvvvvvvvvvvvvv') 
+            Log(media.primary_metadata)
 
-            
+
             movie_year = media.year
             movie_name = unicodedata.normalize('NFKC', unicode(media.name)).strip()            
-
+            Log('name:[%s], year:[%s]', movie_name, movie_year)
             match = Regex(r'^(?P<name>.*?)[\s\.\[\_\(](?P<year>\d{4})').match(movie_name)
             if match:
                 movie_name = match.group('name').replace('.', ' ').strip()
@@ -51,7 +55,7 @@ class ModuleMovie(AgentBase):
             Log(json.dumps(meta_info, indent=4))
 
             metadata.title = meta_info['title']
-            metadata.original_title = metadata.title
+            metadata.original_title = meta_info['originaltitle']
             metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
 
             try: 
@@ -81,6 +85,11 @@ class ModuleMovie(AgentBase):
                     metadata.rating = item['value']
                     metadata.audience_rating = 0.0
                     metadata.rating_image = 'rottentomatoes://image.rating.spilled' if item['value'] < 7 else 'rottentomatoes://image.rating.upright'
+                elif item['name'] == 'tmdb':
+                    metadata.rating = item['value']
+                    metadata.audience_rating = 0.0
+                    metadata.rating_image = 'imdb://image.rating'
+
             
             # role
             metadata.roles.clear()
@@ -103,9 +112,22 @@ class ModuleMovie(AgentBase):
             metadata.producers.clear()
             
             # art
+            #metadata.posters.clear()
+            Log(metadata.posters)
+            """
+            for item in metadata.posters:
+                try:
+                    Log(item)
+                    del metadata.posters[item]
+                except Exception as e: 
+                    Log('Exception:%s', e)
+                    Log(traceback.format_exc())
+            """
+
             ProxyClass = Proxy.Preview 
             valid_names = []
             poster_index = art_index = 0
+            art_list = []
             for item in sorted(meta_info['art'], key=lambda k: k['score'], reverse=True):
                 valid_names.append(item['value'])
                 if item['aspect'] == 'poster':
@@ -115,6 +137,7 @@ class ModuleMovie(AgentBase):
                         metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
                     poster_index += 1
                 elif item['aspect'] == 'landscape':
+                    art_list.append(item['value'])
                     if item['thumb'] == '':
                         metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
                     else:
@@ -143,12 +166,16 @@ class ModuleMovie(AgentBase):
                 ddns=Prefs['server'],
                 youtube_id=youtube_id,
                 apikey=Prefs['apikey']
-            )
+            ) 
             """
             
 
             for extra in meta_info['extras']:
-                if extra['mode'] == 'naver':
+                if True:# and extra['thumb'] is None or extra['thumb'] == '':
+                    thumb = art_list[random.randint(0, len(art_list)-1)]
+                else:
+                    thumb = extra['thumb']
+                if extra['mode'] in ['naver', 'youtube']:
                     url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(
                         ddns=Prefs['server'],
                         site=extra['mode'],
@@ -157,12 +184,12 @@ class ModuleMovie(AgentBase):
                     )
                     metadata.extras.add(
                         self.extra_map[extra['content_type']](
-                            url='sjva://sjva.me/redirect.mp4/naver|%s' % (url), 
+                            url='sjva://sjva.me/redirect.mp4/%s|%s' % (extra['mode'], url), 
                             title=extra['title'],
-                            thumb=extra['thumb'],
+                            thumb=thumb,
                         )
                     )
- 
+
             
             return
 

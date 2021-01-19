@@ -20,7 +20,7 @@ class AgentMovie(Agent.Movies):
         'D' : ModuleJavCensoredAma(), 
         'O' : ModuleOttMovie(),  
         'P' : ModuleOttShow(),
-        'M' : ModuleMovie(),
+        'M' : ModuleMovie(), 
     }
 
     def search(self, results, media, lang, manual):
