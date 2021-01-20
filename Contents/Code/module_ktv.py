@@ -192,6 +192,7 @@ class ModuleKtv(AgentBase):
         # 테마2
         
         # Get the TVDB id from the Movie Database Agent
+        tvdb_id = None
         if 'tmdb_id' in meta_info['extra_info']:
             tvdb_id = Core.messaging.call_external_function(
                 'com.plexapp.agents.themoviedb',
