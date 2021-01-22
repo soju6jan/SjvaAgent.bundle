@@ -22,13 +22,7 @@ def MediaObjectsForURL(url):
             part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
             part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
             return [MediaObject(parts=[part], container='mp4', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
-        elif url.find('/kakao.mp4/') != -1:
-            url = url.split('/kakao.mp4/')[1]
-            part = PartObject(key=Callback(PlayVideoKakao, url=url), container='mp4', optimized_for_streaming=True)
-            #key = HTTPLiveStreamURL(Callback(PlayVideo, url=url))
-            part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
-            part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
-            return [MediaObject(parts=[part], container='mp4', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
+        
 
         elif url.find('/video.m3u8/') != -1:
             part = PartObject(key=url.split('/video.m3u8/')[1], protocol='hls', container='mpegts', optimized_for_streaming=True)
@@ -191,13 +185,7 @@ def MediaObjectsForURL(url):
         Log(traceback.format_exc())
 
 
-@indirect
-def PlayVideoKakao(url, **kwargs):
-    content_id = url.split('/')[-1]
-    url = 'https://tv.kakao.com/katz/v2/ft/cliplink/{}/readyNplay?player=monet_html5&profile=HIGH&service=kakao_tv&section=channel&fields=seekUrl,abrVideoLocationList&startPosition=0&tid=&dteType=PC&continuousPlay=false&contentType=&{}'.format(content_id, int(time.time()))
-    data = JSON.ObjectFromURL(url)
-    video_url = data['videoLocation']['url']
-    return IndirectResponse(VideoClipObject, key=video_url)
+
 
 
 
@@ -219,13 +207,7 @@ def PlayVideoOtt(url, **kwargs):
     #return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(video_url))
 
 
-@indirect
-def PlayVideoYoutube(url, **kwargs):
-    data = JSON.ObjectFromURL(url)
-    video_url = data['url']
-    Log('111111111111111111')
-    Log(video_url)
-    return IndirectResponse(VideoClipObject, key=video_url)
+
         
 @indirect
 def PlayVideoRequest(url, **kwargs):
@@ -237,3 +219,31 @@ def PlayVideoRequest(url, **kwargs):
 
 
 
+"""
+elif url.find('/kakao.mp4/') != -1:
+            url = url.split('/kakao.mp4/')[1]
+            part = PartObject(key=Callback(PlayVideoKakao, url=url), container='mp4', optimized_for_streaming=True)
+            #key = HTTPLiveStreamURL(Callback(PlayVideo, url=url))
+            part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
+            part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
+            return [MediaObject(parts=[part], container='mp4', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
+
+
+@indirect
+def PlayVideoKakao(url, **kwargs):
+    content_id = url.split('/')[-1]
+    url = 'https://tv.kakao.com/katz/v2/ft/cliplink/{}/readyNplay?player=monet_html5&profile=HIGH&service=kakao_tv&section=channel&fields=seekUrl,abrVideoLocationList&startPosition=0&tid=&dteType=PC&continuousPlay=false&contentType=&{}'.format(content_id, int(time.time()))
+    data = JSON.ObjectFromURL(url)
+    video_url = data['videoLocation']['url']
+    return IndirectResponse(VideoClipObject, key=video_url)
+
+
+@indirect
+def PlayVideoYoutube(url, **kwargs):
+    data = JSON.ObjectFromURL(url)
+    video_url = data['url']
+    Log('111111111111111111')
+    Log(video_url)
+    return IndirectResponse(VideoClipObject, key=video_url)
+
+"""

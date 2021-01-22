@@ -152,6 +152,15 @@ class ModuleMovie(AgentBase):
                 
 
             metadata.reviews.clear()
+            for item in meta_info['review']:
+                r = metadata.reviews.new()
+                r.author = item['author']
+                r.source = item['source']
+                r.image = 'rottentomatoes://image.review.fresh' if item['rating'] >= 6 else 'rottentomatoes://image.review.rotten'
+                r.link = item['link'] 
+                r.text = item['text']
+
+            """
             if 'making_note' in meta_info['extra_info']:
                 r = metadata.reviews.new()
                 r.author = '네이버'
@@ -159,7 +168,8 @@ class ModuleMovie(AgentBase):
                 r.image = 'rottentomatoes://image.review.fresh' if 'fresh' == 'fresh' else 'rottentomatoes://image.review.rotten'
                 r.link = 'https://sjva.me'
                 r.text = meta_info['extra_info']['making_note']
-             
+            """
+
             """
             youtube_id = '7tXniRliqNE'
             url = '{ddns}/metadata/api/youtube?youtube_id={youtube_id}&apikey={apikey}'.format(
@@ -171,7 +181,7 @@ class ModuleMovie(AgentBase):
             
 
             for extra in meta_info['extras']:
-                if True:# and extra['thumb'] is None or extra['thumb'] == '':
+                if extra['thumb'] is None or extra['thumb'] == '':
                     thumb = art_list[random.randint(0, len(art_list)-1)]
                 else:
                     thumb = extra['thumb']
@@ -190,6 +200,11 @@ class ModuleMovie(AgentBase):
                         )
                     )
 
+            
+            if meta_info['tag'] is not None:
+                metadata.collections.clear()
+                for item in meta_info['tag']:
+                    metadata.collections.add((item))
             
             return
 

@@ -114,13 +114,17 @@ class ModuleOttShow(AgentBase):
                         )
                         url = 'sjva://sjva.me/%s/%s|%s' % ('redirect.m3u8' if site=='tving' else 'ott', site, url)
                         title = info[site]['title'] if info[site]['title'] != '' else info[site]['plot']
-                        metadata.extras.add(
-                            FeaturetteObject(
-                                url=url, 
-                                title='%s회. %s' % (no, title),
-                                thumb=info[site]['thumb'],
-                            )
+                        extra_media = FeaturetteObject(
+                            url=url, 
+                            title='%s회. %s' % (no, title),
+                            thumb=info[site]['thumb'],
                         )
+                        metadata.extras.add(extra_media)
+                        Log('vvvvvvvvvvvvvvvvvvvvvvvvvvvvv')
+                        Log(extra_media)
+                        Log(extra_media.index)
+                        Log('wwwwwwwwwwwwwwwwwwwwwwwwwwww')
+                        
 
  
 

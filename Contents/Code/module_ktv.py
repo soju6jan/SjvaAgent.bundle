@@ -172,10 +172,10 @@ class ModuleKtv(AgentBase):
                 season_valid_names.append(item['value'])
                 art_index += 1
             elif item['aspect'] == 'banner':
-                if item['thumb'] == '':
+                if item['thumb'] == '': 
                     metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
                 else:
-                    metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1)
+                    metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1) 
                 banner_index += 1
         metadata.posters.validate_keys(valid_names)
         metadata.art.validate_keys(valid_names)

@@ -40,6 +40,7 @@ def MediaObjectsForURL(url):
                 )
             ]
         elif url.find('/redirect.m3u8/') != -1:
+
             tmp = url.split('/redirect.m3u8/')[1]
             mode, param = tmp.split('|')
             if mode == 'tving':
@@ -47,17 +48,31 @@ def MediaObjectsForURL(url):
             elif mode == 'wavve':
                 import urllib
                 param = urllib.quote(param)
-                Log('3333333333333333333333333')
-                Log(param)
                 redirect_url = '/:/plugins/com.plexapp.agents.sjva_agent/function/wavve?sjva_url=%s' % param
-                #redirect_url = 'https://vod.cdn.wavve.com/hls/M01/M_1003704100074100000.1/2/chunklist5000.m3u8?authtoken=a5d-yfS36R7qLlgeDI_IW1OoQ0M6v-apk1oHukSjnmTsVF9aSckKf0xDKzFP2-yjLYWxwNTkIvvxZHRm_8kcLCe5yUh5B3TV7rk440x-nfTBvgJtFp3wp94zYGurWjwjMhkfBtbxQG7PKjGgwwLV1Lr85oG7v2n7AvcdnLrxbXS1cX-1x5pfyCtsh2wtmGIgSyD7LyqdneVZE3TcEp8'
             Log('redirect_url : %s', redirect_url)
-
             """
-            part = PartObject(key=redirect_url, container='mpegts', optimized_for_streaming=True)
-            part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
-            part.streams.append(AudioStreamObject(codec=AudioCodec.AAC))
-            return [MediaObject(parts=[part], protocol="hls", container='mpegts', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
+            part = PartObject(key=redirect_url, container='mpegts')
+            Log(part)
+            #Log(part.file)
+            #part.width = 1920
+            Log('--------------------------')
+            #part.streams.append(VideoStreamObject(codec=VideoCodec.H264, width = 1920,
+            height = 1080))
+            #part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
+            media = MediaObject(parts=[part], protocol="hls", container='mpegts', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC, optimized_for_streaming = True, width=1920, height=1080)
+            Log('====================')
+
+            Log(part)
+            #part.set_default_attr('width', '1080')
+            Log(media.to_xml())
+            tmp = media.to_xml()
+            #import pyamf
+            #from pyamf import xml
+            #xml.tostring(tmp)
+            return [media]
+
+            
+
             """
             return [
                 MediaObject(
@@ -75,6 +90,7 @@ def MediaObjectsForURL(url):
                     #video_resolution = 'sd', #ios 튕김
                 )
             ]
+            
         elif url.find('/redirect.mp4/') != -1:
             tmp = url.split('/redirect.mp4/')[1]
             mode, param = tmp.split('|')
