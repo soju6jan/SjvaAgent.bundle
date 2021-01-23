@@ -227,9 +227,11 @@ class ModuleKtv(AgentBase):
                 for item in sorted(episode_info['thumb'], key=lambda k: k['score'], reverse=True):
                     valid_names.append(item['value'])
                     if item['thumb'] == '':
-                        episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=thumb_index+1)
+                        try: episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=thumb_index+1)
+                        except: pass
                     else:
-                        episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['thumb']).content, sort_order=thumb_index+1)
+                        try : episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['thumb']).content, sort_order=thumb_index+1)
+                        except: pass
                     thumb_index += 1
                     ott_mode = 'stop'
                 
@@ -256,7 +258,8 @@ class ModuleKtv(AgentBase):
                         if ott_mode in ['full', 'only_thumb']:
                             thumb_index = 20
                             valid_names.append(show_epi_info[site]['thumb'])
-                            episode.thumbs[show_epi_info[site]['thumb']] = Proxy.Preview(HTTP.Request(show_epi_info[site]['thumb']).content, sort_order=thumb_index+1)
+                            try: episode.thumbs[show_epi_info[site]['thumb']] = Proxy.Preview(HTTP.Request(show_epi_info[site]['thumb']).content, sort_order=thumb_index+1)
+                            except: pass
                 
             episode.thumbs.validate_keys(valid_names)
 

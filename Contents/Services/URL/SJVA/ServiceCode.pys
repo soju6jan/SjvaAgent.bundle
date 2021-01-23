@@ -49,7 +49,9 @@ def MediaObjectsForURL(url):
                 import urllib
                 param = urllib.quote(param)
                 redirect_url = '/:/plugins/com.plexapp.agents.sjva_agent/function/wavve?sjva_url=%s' % param
+            
             Log('redirect_url : %s', redirect_url)
+
             """
             part = PartObject(key=redirect_url, container='mpegts')
             Log(part)
@@ -70,10 +72,8 @@ def MediaObjectsForURL(url):
             #from pyamf import xml
             #xml.tostring(tmp)
             return [media]
-
-            
-
             """
+
             return [
                 MediaObject(
                     parts = [
