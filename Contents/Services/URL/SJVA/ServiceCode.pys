@@ -115,7 +115,22 @@ def MediaObjectsForURL(url):
                     optimized_for_streaming = True,
                 )
             ]
-
+        elif url.find('/wavve_movie/') != -1:
+            return [
+                MediaObject(
+                    parts = [
+                        PartObject(
+                            key=Callback(PlayVideoOtt2, url=url.split('/wavve_movie/')[1]),
+                            container='mpegts', 
+                        )
+                    ],
+                    #protocol="hls",
+                    container='mpegts', 
+                    video_codec=VideoCodec.H264, 
+                    audio_codec=AudioCodec.AAC,
+                    optimized_for_streaming = True,
+                )
+            ]
 
     except Exception as e: 
         Log('Exception:%s', e)
@@ -137,6 +152,16 @@ def PlayVideoOtt(url, **kwargs):
     Log(video_url)
     return IndirectResponse(VideoClipObject, key=video_url)
     #return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(video_url))
+
+
+@indirect
+def PlayVideoOtt2(url, **kwargs):
+    data = JSON.ObjectFromURL(url)
+    video_url = data['playurl'].replace('chunklist5000.m3u8', '5000/chunklist.m3u8')
+    Log(video_url)
+    return IndirectResponse(VideoClipObject, key=video_url)
+    #return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(video_url))
+
 
 
 """

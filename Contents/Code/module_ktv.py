@@ -185,10 +185,13 @@ class ModuleKtv(AgentBase):
         #metadata_season.art.validate_keys(season_valid_names)
 
         # 테마
+        valid_names = []
         if 'themes' in meta_info['extra_info']:
             for tmp in meta_info['extra_info']['themes']:
                 if tmp not in metadata.themes:
+                    valid_names.append(tmp)
                     metadata.themes[tmp] = Proxy.Media(HTTP.Request(tmp).content)
+           
         
         # 테마2
         
@@ -205,9 +208,12 @@ class ModuleKtv(AgentBase):
         Log('TVDB_ID : %s', tvdb_id)
         THEME_URL = 'https://tvthemes.plexapp.com/%s.mp3'
         if tvdb_id and THEME_URL % tvdb_id not in metadata.themes:
-            try: metadata.themes[THEME_URL % tvdb_id] = Proxy.Media(HTTP.Request(THEME_URL % tvdb_id))
+            tmp = THEME_URL % tvdb_id
+            try: 
+                metadata.themes[tmp] = Proxy.Media(HTTP.Request(THEME_URL % tvdb_id))
+                valid_names.append(tmp)
             except: pass
-
+        metadata.themes.validate_keys(valid_names)    
 
 
     def update_episode(self, show_epi_info, episode, frequency=None):

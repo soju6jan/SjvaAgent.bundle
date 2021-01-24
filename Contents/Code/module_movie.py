@@ -52,7 +52,7 @@ class ModuleMovie(AgentBase):
         try:
             meta_info = self.send_info(self.module_name, metadata.id)
 
-            Log(json.dumps(meta_info, indent=4))
+            #Log(json.dumps(meta_info, indent=4))
 
             metadata.title = meta_info['title']
             metadata.original_title = meta_info['originaltitle']
@@ -113,7 +113,7 @@ class ModuleMovie(AgentBase):
             
             # art
             #metadata.posters.clear()
-            Log(metadata.posters)
+            #Log(metadata.posters)
             """
             for item in metadata.posters:
                 try:
@@ -179,6 +179,15 @@ class ModuleMovie(AgentBase):
             ) 
             """
             
+            if 'wavve_stream' in meta_info['extra_info'] and meta_info['extra_info']['wavve_stream']['drm'] == False:
+                url = 'sjva://sjva.me/wavve_movie/%s' % (meta_info['extra_info']['wavve_stream']['request_streaming_url'])
+                extra_media = FeaturetteObject(
+                    url=url, 
+                    title=u'웨이브 재생',
+                    thumb='' if len(art_list) == 0 else art_list[random.randint(0, len(art_list)-1)],
+                )
+                metadata.extras.add(extra_media)
+
 
             for extra in meta_info['extras']:
                 if extra['thumb'] is None or extra['thumb'] == '':
@@ -206,6 +215,11 @@ class ModuleMovie(AgentBase):
                 for item in meta_info['tag']:
                     metadata.collections.add((item))
             
+
+            ####################
+            
+            
+
             return
 
             
@@ -245,7 +259,7 @@ class ModuleMovie(AgentBase):
             for no in no_list:
                 info = meta_info['extra_info']['episodes'][str(no)]
                 Log(no)      
-                Log(info) 
+                Log(info)  
 
                 for site in ['tving', 'wavve']:
                     if site in info:
