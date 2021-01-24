@@ -177,11 +177,12 @@ class ModuleKtv(AgentBase):
                 else:
                     metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1) 
                 banner_index += 1
-        metadata.posters.validate_keys(valid_names)
-        metadata.art.validate_keys(valid_names)
-        metadata.banners.validate_keys(valid_names)
-        metadata_season.posters.validate_keys(season_valid_names)
-        metadata_season.art.validate_keys(season_valid_names)
+        # 이거 확인필요. 번들제거 영향. 시즌을 주석처리안하면 쇼에 최후것만 입력됨.
+        #metadata.posters.validate_keys(valid_names)
+        #metadata.art.validate_keys(valid_names)
+        #metadata.banners.validate_keys(valid_names)
+        #metadata_season.posters.validate_keys(season_valid_names)
+        #metadata_season.art.validate_keys(season_valid_names)
 
         # 테마
         if 'themes' in meta_info['extra_info']:
@@ -261,7 +262,7 @@ class ModuleKtv(AgentBase):
                             try: episode.thumbs[show_epi_info[site]['thumb']] = Proxy.Preview(HTTP.Request(show_epi_info[site]['thumb']).content, sort_order=thumb_index+1)
                             except: pass
                 
-            episode.thumbs.validate_keys(valid_names)
+            #episode.thumbs.validate_keys(valid_names)
 
         except Exception as e: 
             Log('Exception:%s', e)
