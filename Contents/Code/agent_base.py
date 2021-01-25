@@ -21,7 +21,6 @@ class AgentBase(object):
         'com.plexapp.agents.sjva_agent_ktv' : 'K',                  # K : 국내TV
         # F : FTV
         # A : ani
-        'com.plexapp.agents.sjva_agent_ott_movie' : 'O',
         'com.plexapp.agents.sjva_agent_ott_show' : 'P',
         'com.plexapp.agents.sjva_agent_movie' : 'M',            # M : 영화
         # X : 앨범
