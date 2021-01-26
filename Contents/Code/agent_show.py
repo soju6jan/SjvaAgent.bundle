@@ -8,7 +8,7 @@ class AgentShow(Agent.TV_Shows):
     name = "SJVA 설정"
     languages = [Locale.Language.Korean]
     primary_provider = True
-    accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.xbmcnfo']
+    accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.localmediapatch', 'com.plexapp.agents.xbmcnfo']
     contributes_to = ['com.plexapp.agents.xbmcnfo']
     
     instance_list = {

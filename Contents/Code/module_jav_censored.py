@@ -75,26 +75,21 @@ class ModuleJavCensoredBase(AgentBase):
             Log('Exception:%s', exception)
             Log(traceback.format_exc())
 
-        ProxyClass = Proxy.Preview if data['plex_is_proxy_preview'] else Proxy.media
-        art_count = 0
-        for item in data['fanart']:
-            if art_count >= data['plex_art_count']:
-                break
-            try: metadata.art[item] = ProxyClass(HTTP.Request(item).content)
-            except: pass
-            art_count += 1
-
+        ProxyClass = Proxy.Preview 
         landscape = None
         for item in data['thumb']:
             if item['aspect'] == 'poster':
                 try: metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
                 except: pass
             if item['aspect'] == 'landscape':
-                if data['plex_is_landscape_to_art']:
-                    landscape = item['value']
-                    try: metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
-                    except: pass
-        
+                landscape = item['value']
+                try: metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
+                except: pass
+
+        for item in data['fanart']:
+            try: metadata.art[item] = ProxyClass(HTTP.Request(item).content)
+            except: pass
+
         if data['genre'] is not None:
             metadata.genres.clear()
             for item in data['genre']:

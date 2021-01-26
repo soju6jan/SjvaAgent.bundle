@@ -35,7 +35,7 @@ class ModuleKtv(AgentBase):
 
             if search_data is None:
                 return
-            Log(json.dumps(search_data, indent=4))
+            #Log(json.dumps(search_data, indent=4))
 
             if 'daum' in search_data:
                 data = search_data['daum']
@@ -127,7 +127,8 @@ class ModuleKtv(AgentBase):
             if item['mode'] == 'mp4':
                 url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
             elif item['mode'] == 'kakao':
-                url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
+                url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=item['mode'], param=item['content_url'], apikey=Prefs['apikey'])
+                url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
             metadata.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
 
         # rating
@@ -192,7 +193,6 @@ class ModuleKtv(AgentBase):
                     valid_names.append(tmp)
                     metadata.themes[tmp] = Proxy.Media(HTTP.Request(tmp).content)
            
-        
         # 테마2
         
         # Get the TVDB id from the Movie Database Agent
@@ -247,7 +247,9 @@ class ModuleKtv(AgentBase):
                     if item['mode'] == 'mp4':
                         url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
                     elif item['mode'] == 'kakao':
-                        url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
+                        url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=extra['mode'], param=extra['content_url'], apikey=Prefs['apikey'])
+                        url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
+                        #url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
                     episode.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
             else:
                 ott_mode = 'full'
@@ -310,7 +312,7 @@ class ModuleKtv(AgentBase):
                 Log('search_code : %s', search_code)
 
                 meta_info = self.send_info(self.module_name, search_code, title=search_title)
-                Log(json.dumps(meta_info, indent=4))
+                #Log(json.dumps(meta_info, indent=4))
 
                 if flag_media_season:
                     metadata.title = media.title.split('|')[0].strip()

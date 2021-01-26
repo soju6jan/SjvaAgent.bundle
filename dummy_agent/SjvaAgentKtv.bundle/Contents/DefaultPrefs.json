@@ -1,0 +1,20 @@
+[
+	{
+		"id": "server",
+		"label": "모듈 전용 SJVA 주소. DDNS만 입력. 끝에 / 삭제 (미입력시 SjvaAgent 설정 값 사용)",
+		"type": "text",
+		"default": ""
+	},
+	{
+		"id": "apikey",
+		"label": "모듈 전용 SJVA APIKEY. APIKEY 사용시만 입력 (미입력시 SjvaAgent 설정 값 사용)",
+		"type": "text",
+		"default": ""
+	},
+	{
+		"id": "end_noti_filepath",
+		"label": "TV쇼 [종영] 표시할 파일의 위치. 이 위치 안에 있는 쇼가 종영하면 타이틀에 [종영]표시가 추가됨. 2개 이상일 경우 구분자는 | 한글이 포함되어 있으면 에러가 발생하는데 일단 한글 없이 저장한 후 Plex Media Server/Plug-in Support/Preferences/com.plexapp.agents.sjva_agent_ktv.xml 파일 수동 편집",
+		"type": "text",
+		"default": ""
+	}
+]

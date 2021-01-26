@@ -94,11 +94,8 @@ def MediaObjectsForURL(url):
         elif url.find('/redirect.mp4/') != -1:
             tmp = url.split('/redirect.mp4/')[1]
             mode, param = tmp.split('|')
-            if mode == 'kakao':
-                redirect_url = '/:/plugins/com.plexapp.agents.sjva_agent/function/kakao?content_id=%s' % param
-            elif mode in ['naver', 'youtube']:
+            if mode in ['naver', 'youtube', 'kakao']:
                 redirect_url = param
-            
             Log('redirect_url : %s', redirect_url)
             return [
                 MediaObject(
@@ -108,7 +105,6 @@ def MediaObjectsForURL(url):
                             container='mp4', 
                         )
                     ],
-                    #protocol="hls",
                     container='mp4', 
                     video_codec=VideoCodec.H264, 
                     audio_codec=AudioCodec.AAC,

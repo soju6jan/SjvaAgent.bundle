@@ -162,7 +162,7 @@ class ModuleMovie(AgentBase):
                 else:
                     thumb = extra['thumb']
                 extra_url = None
-                if extra['mode'] in ['naver', 'youtube']:
+                if extra['mode'] in ['naver', 'youtube', 'kakao']:
                     url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(
                         ddns=Prefs['server'],
                         site=extra['mode'],
@@ -170,8 +170,8 @@ class ModuleMovie(AgentBase):
                         apikey=Prefs['apikey']
                     )
                     extra_url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (extra['mode'], url)
-                elif extra['mode'] == 'kakao':
-                    extra_url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % extra['content_url']
+                #elif extra['mode'] == 'kakao':
+                #    extra_url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % extra['content_url']
                 if extra_url is not None:
                     metadata.extras.add(
                         self.extra_map[extra['content_type']](

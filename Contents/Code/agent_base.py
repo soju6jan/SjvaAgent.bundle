@@ -22,9 +22,9 @@ class AgentBase(object):
         # F : FTV
         # A : ani
         'com.plexapp.agents.sjva_agent_ott_show' : 'P',
-        'com.plexapp.agents.sjva_agent_movie' : 'M',            # M : 영화
-        # X : 앨범
-        # Y : 아티스트
+        'com.plexapp.agents.sjva_agent_movie' : 'M',                # M : 영화
+        'com.plexapp.agents.sjva_agent_music' : 'V',                # V : 앨범, 아티스트 
+        # 오디오북?
     }
 
 

@@ -7,6 +7,7 @@ def Start():
 
 from .agent_movie import AgentMovie
 from .agent_show import AgentShow
+from .agent_music import AgentAlbum, AgentArtist
 from .route_util import * 
 
 """

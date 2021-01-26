@@ -171,7 +171,7 @@ class localMediaTV(Agent.TV_Shows):
 #####################################################################################################################
 
 class localMediaArtistCommon(object):
-  name = 'Local Media Assets (Artists)'
+  name = 'Local Media Assets (Artists) Patch'
   languages = [Locale.Language.NoLanguage]
   primary_provider = False
   persist_stored_files = False
@@ -298,7 +298,7 @@ class localMediaArtistModern(localMediaArtistCommon, Agent.Artist):
 
 
 class localMediaAlbum(Agent.Album):
-  name = 'Local Media Assets (Albums)'
+  name = 'Local Media Assets (Albums) Patch'
   languages = [Locale.Language.NoLanguage]
   primary_provider = False
   persist_stored_files = False
