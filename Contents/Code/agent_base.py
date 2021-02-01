@@ -19,6 +19,7 @@ class AgentBase(object):
         # W : western
         # G : fc2
         'com.plexapp.agents.sjva_agent_ktv' : 'K',                  # K : 국내TV
+        'com.plexapp.agents.sjva_agent_ftv' : 'F',                  # F : 외국TV
         # F : FTV
         # A : ani
         'com.plexapp.agents.sjva_agent_ott_show' : 'P',

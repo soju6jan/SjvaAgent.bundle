@@ -2,6 +2,7 @@
 import os, traceback, json, urllib, re, unicodedata
 from .agent_base import AgentBase
 from .module_ktv import ModuleKtv
+from .module_ftv import ModuleFtv
 
 
 class AgentShow(Agent.TV_Shows):
@@ -13,6 +14,8 @@ class AgentShow(Agent.TV_Shows):
     
     instance_list = {
         'K' : ModuleKtv(), 
+        'F' : ModuleFtv(), 
+        
     }
 
     def search(self, results, media, lang, manual):

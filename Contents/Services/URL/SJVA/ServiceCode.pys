@@ -43,12 +43,12 @@ def MediaObjectsForURL(url):
 
             tmp = url.split('/redirect.m3u8/')[1]
             mode, param = tmp.split('|')
-            if mode == 'tving':
+            if mode in ['tving', 'wavve']:
                 redirect_url = param
-            elif mode == 'wavve':
-                import urllib
-                param = urllib.quote(param)
-                redirect_url = '/:/plugins/com.plexapp.agents.sjva_agent/function/wavve?sjva_url=%s' % param
+            #elif mode == 'wavve':
+            #    import urllib
+            #    param = urllib.quote(param)
+            #    redirect_url = '/:/plugins/com.plexapp.agents.sjva_agent/function/wavve?sjva_url=%s' % param
             
             Log('redirect_url : %s', redirect_url)
 

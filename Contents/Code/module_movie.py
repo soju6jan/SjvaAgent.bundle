@@ -139,7 +139,10 @@ class ModuleMovie(AgentBase):
                 r.text = item['text']
 
             if 'wavve_stream' in meta_info['extra_info'] and meta_info['extra_info']['wavve_stream']['drm'] == False:
-                url = 'sjva://sjva.me/wavve_movie/%s' % (meta_info['extra_info']['wavve_stream']['plex'])
+                if meta_info['extra_info']['wavve_stream']['mode'] == '0':
+                    url = 'sjva://sjva.me/wavve_movie/%s' % (meta_info['extra_info']['wavve_stream']['plex'])
+                else:
+                    url = 'sjva://sjva.me/redirect.m3u8/wavve|%s' % (meta_info['extra_info']['wavve_stream']['plex2'])
                 extra_media = FeaturetteObject(
                     url=url, 
                     title=u'웨이브 재생',

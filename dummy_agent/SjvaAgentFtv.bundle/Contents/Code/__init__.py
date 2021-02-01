@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-class SjvaAgentAni(Agent.TV_Shows):
-    name = 'SJVA 애니 (dummy)'
+class SjvaAgentFtv(Agent.TV_Shows):
+    name = 'SJVA 외국TV (dummy)'
     
     fallback_agent = 'com.plexapp.agents.sjva_agent'
     languages = [Locale.Language.Korean]
