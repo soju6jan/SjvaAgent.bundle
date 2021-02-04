@@ -151,7 +151,6 @@ class ModuleKtv(AgentBase):
         poster_limit = int(Prefs['poster_limit'])
         art_limit = int(Prefs['art_limit'])
         banner_limit = int(Prefs['banner_limit'])
-        Log('Prefs:%d,%d,%d', poster_limit, art_limit, banner_limit)
 
         # poster
         ProxyClass = Proxy.Preview
@@ -246,8 +245,8 @@ class ModuleKtv(AgentBase):
                 thumb_index = 30
                 ott_mode = 'only_thumb'
                 for item in sorted(episode_info['thumb'], key=lambda k: k['score'], reverse=True):
-                    valid_names.append(item['value'])
                     if thumb_limit > 0 and thumb_index >= thumb_limit + 30: continue # orial
+                    valid_names.append(item['value'])
                     if item['thumb'] == '':
                         try: episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=thumb_index+1)
                         except: pass

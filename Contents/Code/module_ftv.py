@@ -191,14 +191,16 @@ class ModuleFtv(AgentBase):
         poster_index = art_index = banner_index = 0
         art_map = {'poster': [metadata.posters, 0], 'landscape' : [metadata.art, 0], 'banner':[metadata.banners, 0]}
         for item in sorted(meta_info['art'], key=lambda k: k['score'], reverse=True):
-            valid_names.append(item['value'])
+            #valid_names.append(item['value'])
             try:
                 target = art_map[item['aspect']]
                 limit = limits[item['aspect']]
                 if limit > 0 and target[1] >= limit: continue
+                valid_names.append(item['value'])
                 target[0][item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=target[1]+1)
                 target[1] = target[1] + 1
             except: pass
+
         # 이거 확인필요. 번들제거 영향. 시즌을 주석처리안하면 쇼에 최후것만 입력됨.
         #metadata.posters.validate_keys(valid_names)
         #metadata.art.validate_keys(valid_names)
@@ -233,16 +235,16 @@ class ModuleFtv(AgentBase):
         Log('Season no : %s' % season_no)
         Log(season_no in meta_info['seasons'])
         for item in sorted(meta_info['seasons'][season_no]['art'], key=lambda k: k['score'], reverse=True):
-            valid_names.append(item['value'])
+            #valid_names.append(item['value'])
             try:
                 target = art_map[item['aspect']]
                 limit = limits[item['aspect']]
                 if limit > 0 and target[1] >= limit: continue
+                valid_names.append(item['value'])
                 target[0][item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=target[1]+1)
                 target[1] = target[1] + 1
             except: pass
         
-
 
 
 
@@ -269,8 +271,8 @@ class ModuleFtv(AgentBase):
                 thumb_index = 30
                 ott_mode = 'only_thumb'
                 for item in sorted(episode_info['thumb'], key=lambda k: k['score'], reverse=True):
-                    valid_names.append(item['value'])
                     if thumb_limit > 0 and thumb_index >= thumb_limit + 30: continue # orial
+                    valid_names.append(item['value'])
                     if item['thumb'] == '':
                         try: episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=thumb_index+1)
                         except: pass
