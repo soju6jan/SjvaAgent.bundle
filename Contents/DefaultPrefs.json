@@ -16,5 +16,23 @@
 		"label": "URL 요청 timeout",
 		"type": "text",
 		"default": "3000"
+	},
+	{
+		"id": "poster_limit",
+		"label": "포스터 수 제한(0:제한안함)",
+		"type": "text",
+		"default": "0"
+	},
+	{
+		"id": "art_limit",
+		"label": "아트 수 제한(0:제한안함)",
+		"type": "text",
+		"default": "0"
+	},
+	{
+		"id": "banner_limit",
+		"label": "배너 수 제한(0:제한안함)",
+		"type": "text",
+		"default": "0"
 	}
 ]

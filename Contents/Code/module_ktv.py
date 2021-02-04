@@ -147,14 +147,21 @@ class ModuleKtv(AgentBase):
                 actor.photo = item['thumb']
                 Log('%s - %s'% (actor.name, actor.photo))
 
+        # orial
+        poster_limit = int(Prefs['poster_limit'])
+        art_limit = int(Prefs['art_limit'])
+        banner_limit = int(Prefs['banner_limit'])
+        Log('Prefs:%d,%d,%d', poster_limit, art_limit, banner_limit)
+
         # poster
         ProxyClass = Proxy.Preview
         valid_names = []
         season_valid_names = []
         poster_index = art_index = banner_index = 0
         for item in sorted(meta_info['thumb'], key=lambda k: k['score'], reverse=True):
-            valid_names.append(item['value'])
+            #valid_names.append(item['value'])
             if item['aspect'] == 'poster':
+                if poster_limit > 0 and poster_index >= poster_limit: continue
                 if item['thumb'] == '':
                     metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
                     metadata_season.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
@@ -164,6 +171,7 @@ class ModuleKtv(AgentBase):
                 season_valid_names.append(item['value'])
                 poster_index += 1
             elif item['aspect'] == 'landscape':
+                if art_limit > 0 and art_index >= art_limit: continue
                 if item['thumb'] == '':
                     metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
                     metadata_season.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
@@ -173,11 +181,15 @@ class ModuleKtv(AgentBase):
                 season_valid_names.append(item['value'])
                 art_index += 1
             elif item['aspect'] == 'banner':
+                if banner_limit > 0 and banner_index >= banner_limit: continue
                 if item['thumb'] == '': 
                     metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
                 else:
                     metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1) 
                 banner_index += 1
+
+            valid_names.append(item['value'])
+
         # 이거 확인필요. 번들제거 영향. 시즌을 주석처리안하면 쇼에 최후것만 입력됨.
         #metadata.posters.validate_keys(valid_names)
         #metadata.art.validate_keys(valid_names)

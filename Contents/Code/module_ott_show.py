@@ -68,30 +68,41 @@ class ModuleOttShow(AgentBase):
                     actor.name = item['name']
                     actor.photo = item['thumb']
 
+            # orial
+            poster_limit = int(Prefs['poster_limit'])
+            art_limit = int(Prefs['art_limit'])
+            banner_limit = int(Prefs['banner_limit'])
+            Log('Prefs:%d,%d,%d', poster_limit, art_limit, banner_limit)
+
             # poster
             ProxyClass = Proxy.Preview 
             valid_names = []
             poster_index = art_index = banner_index = 0
             for item in sorted(meta_info['thumb'], key=lambda k: k['score'], reverse=True):
-                valid_names.append(item['value'])
+                #valid_names.append(item['value'])
                 if item['aspect'] == 'poster':
+                    if poster_limit > 0 and poster_index >= poster_limit: continue
                     if item['thumb'] == '':
                         metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
                     else:
                         metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
                     poster_index += 1
                 elif item['aspect'] == 'landscape':
+                    if art_limit > 0 and art_index >= art_limit: continue
                     if item['thumb'] == '':
                         metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
                     else:
                         metadata.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
                     art_index += 1
                 elif item['aspect'] == 'banner':
+                    if banner_limit > 0 and banner_index >= banner_limit: continue
                     if item['thumb'] == '':
                         metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
                     else:
                         metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1)
                     banner_index += 1  
+
+                valid_names.append(item['value'])
 
             metadata.posters.validate_keys(valid_names)
             metadata.art.validate_keys(valid_names)

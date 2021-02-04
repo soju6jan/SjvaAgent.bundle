@@ -98,6 +98,12 @@ class ModuleMovie(AgentBase):
                 actor = metadata.producers.new()
                 actor.name = item
             
+            # orial
+            poster_limit = int(Prefs['poster_limit'])
+            art_limit = int(Prefs['art_limit'])
+            banner_limit = int(Prefs['banner_limit'])
+            Log('Prefs:%d,%d,%d', poster_limit, art_limit, banner_limit)
+
             # art
             ProxyClass = Proxy.Preview 
             valid_names = []
@@ -106,12 +112,14 @@ class ModuleMovie(AgentBase):
             for item in sorted(meta_info['art'], key=lambda k: k['score'], reverse=True):
                 valid_names.append(item['value'])
                 if item['aspect'] == 'poster':
+                    if poster_limit > 0 and poster_index >= poster_limit: continue
                     if item['thumb'] == '':
                         metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
                     else:
                         metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
                     poster_index += 1
                 elif item['aspect'] == 'landscape':
+                    if art_limit > 0 and art_index >= art_limit: continue
                     art_list.append(item['value'])
                     if item['thumb'] == '':
                         metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
@@ -119,6 +127,7 @@ class ModuleMovie(AgentBase):
                         metadata.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
                     art_index += 1
                 elif item['aspect'] == 'banner':
+                    if banner_limit > 0 and banner_index >= banner_limit: continue
                     if item['thumb'] == '':
                         metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
                     else:
