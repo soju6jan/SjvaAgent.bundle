@@ -34,5 +34,11 @@
 		"label": "배너 수 제한(0:제한안함)",
 		"type": "text",
 		"default": "0"
+	},
+	{
+		"id": "thumb_limit",
+		"label": "에피소드 썸네일 수 제한(0:제한안함)",
+		"type": "text",
+		"default": "0"
 	}
 ]
