@@ -158,7 +158,7 @@ class ModuleKtv(AgentBase):
         season_valid_names = []
         poster_index = art_index = banner_index = 0
         for item in sorted(meta_info['thumb'], key=lambda k: k['score'], reverse=True):
-            #valid_names.append(item['value'])
+            valid_names.append(item['value'])
             if item['aspect'] == 'poster':
                 if poster_limit > 0 and poster_index >= poster_limit: continue
                 if item['thumb'] == '':
@@ -186,8 +186,6 @@ class ModuleKtv(AgentBase):
                 else:
                     metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1) 
                 banner_index += 1
-
-            valid_names.append(item['value'])
 
         # 이거 확인필요. 번들제거 영향. 시즌을 주석처리안하면 쇼에 최후것만 입력됨.
         #metadata.posters.validate_keys(valid_names)
@@ -245,8 +243,8 @@ class ModuleKtv(AgentBase):
                 thumb_index = 30
                 ott_mode = 'only_thumb'
                 for item in sorted(episode_info['thumb'], key=lambda k: k['score'], reverse=True):
-                    if thumb_limit > 0 and thumb_index >= thumb_limit + 30: continue # orial
                     valid_names.append(item['value'])
+                    if thumb_limit > 0 and thumb_index >= thumb_limit + 30: continue # orial
                     if item['thumb'] == '':
                         try: episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=thumb_index+1)
                         except: pass

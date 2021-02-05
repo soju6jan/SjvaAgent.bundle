@@ -79,7 +79,7 @@ class ModuleOttShow(AgentBase):
             valid_names = []
             poster_index = art_index = banner_index = 0
             for item in sorted(meta_info['thumb'], key=lambda k: k['score'], reverse=True):
-                #valid_names.append(item['value'])
+                valid_names.append(item['value'])
                 if item['aspect'] == 'poster':
                     if poster_limit > 0 and poster_index >= poster_limit: continue
                     if item['thumb'] == '':
@@ -101,8 +101,6 @@ class ModuleOttShow(AgentBase):
                     else:
                         metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1)
                     banner_index += 1  
-
-                valid_names.append(item['value'])
 
             metadata.posters.validate_keys(valid_names)
             metadata.art.validate_keys(valid_names)
