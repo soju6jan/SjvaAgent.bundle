@@ -147,7 +147,6 @@ class ModuleKtv(AgentBase):
                 actor.photo = item['thumb']
                 Log('%s - %s'% (actor.name, actor.photo))
 
-        # orial
         poster_limit = int(Prefs['poster_limit'])
         art_limit = int(Prefs['art_limit'])
         banner_limit = int(Prefs['banner_limit'])
@@ -229,7 +228,7 @@ class ModuleKtv(AgentBase):
         try:
             valid_names = []
 
-            thumb_limit = int(Prefs['thumb_limit']) # orial
+            thumb_limit = int(Prefs['thumb_limit'])
 
             if 'daum' in show_epi_info:
                 #if 'tving_id' in meta_info['extra_info']:
@@ -244,7 +243,7 @@ class ModuleKtv(AgentBase):
                 ott_mode = 'only_thumb'
                 for item in sorted(episode_info['thumb'], key=lambda k: k['score'], reverse=True):
                     valid_names.append(item['value'])
-                    if thumb_limit > 0 and thumb_index >= thumb_limit + 30: continue # orial
+                    if thumb_limit > 0 and thumb_index >= thumb_limit + 30: continue
                     if item['thumb'] == '':
                         try: episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=thumb_index+1)
                         except: pass
@@ -278,7 +277,8 @@ class ModuleKtv(AgentBase):
 
                         if ott_mode in ['full', 'only_thumb']:
                             thumb_index = 20
-                            if thumb_limit > 0 and thumb_index >= thumb_limit + 20: continue # orial
+                            valid_names.append(show_epi_info[site]['thumb'])
+                            if thumb_limit > 0 and thumb_index >= thumb_limit + 20: continue
                             try: episode.thumbs[show_epi_info[site]['thumb']] = Proxy.Preview(HTTP.Request(show_epi_info[site]['thumb']).content, sort_order=thumb_index+1)
                             except: pass
                 

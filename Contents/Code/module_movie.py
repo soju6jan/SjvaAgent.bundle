@@ -98,7 +98,6 @@ class ModuleMovie(AgentBase):
                 actor = metadata.producers.new()
                 actor.name = item
             
-            # orial
             poster_limit = int(Prefs['poster_limit'])
             art_limit = int(Prefs['art_limit'])
             banner_limit = int(Prefs['banner_limit'])

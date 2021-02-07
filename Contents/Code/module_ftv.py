@@ -183,7 +183,6 @@ class ModuleFtv(AgentBase):
             actor.photo = item['image']
             Log('%s - %s'% (actor.name, actor.photo))
 
-        # orial
         limits = {'poster': int(Prefs['poster_limit']), 'landscape':int(Prefs['art_limit']), 'banner':int(Prefs['banner_limit'])}
 
         # poster
@@ -227,7 +226,6 @@ class ModuleFtv(AgentBase):
 
     def update_season(self, season_no, metadata_season, meta_info):
         valid_names = []
-        # orial
         limits = {'poster': int(Prefs['poster_limit']), 'landscape':int(Prefs['art_limit']), 'banner':int(Prefs['banner_limit'])}
         poster_index = art_index = banner_index = 0
         art_map = {'poster': [metadata_season.posters, 0], 'landscape' : [metadata_season.art, 0], 'banner':[metadata_season.banners, 0]}
@@ -254,8 +252,7 @@ class ModuleFtv(AgentBase):
     def update_episode(self, show_epi_info, episode, frequency=None):
         try:
             valid_names = []
-
-            thumb_limit = int(Prefs['thumb_limit']) # orial
+            thumb_limit = int(Prefs['thumb_limit'])
 
             if 'daum' in show_epi_info:
                 #if 'tving_id' in meta_info['extra_info']:
@@ -270,7 +267,7 @@ class ModuleFtv(AgentBase):
                 ott_mode = 'only_thumb'
                 for item in sorted(episode_info['thumb'], key=lambda k: k['score'], reverse=True):
                     valid_names.append(item['value'])
-                    if thumb_limit > 0 and thumb_index >= thumb_limit + 30: continue # orial
+                    if thumb_limit > 0 and thumb_index >= thumb_limit + 30: continue
                     if item['thumb'] == '':
                         try: episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=thumb_index+1)
                         except: pass
