@@ -40,7 +40,7 @@ class ModuleJavCensoredBase(AgentBase):
             meta = MetadataSearchResult(id=item['code'], name=title, year=year, score=item['score'], thumb=item['image_url'], lang=lang)
             meta.summary = self.change_html(item['title_ko'])
             meta.type = "movie"
-            results.Append(meta)
+            results.Append(meta) 
 
 
 

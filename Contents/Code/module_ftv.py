@@ -231,7 +231,7 @@ class ModuleFtv(AgentBase):
                 target = art_map[item['aspect']]
                 target[0][item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=target[1]+1)
                 target[1] = target[1] + 1
-            except: pass
+            except: pass 
         
 
 
@@ -265,7 +265,7 @@ class ModuleFtv(AgentBase):
                     else:
                         try : episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['thumb']).content, sort_order=thumb_index+1)
                         except: pass
-                    thumb_index += 1
+                    thumb_index = thumb_index + 1
                     ott_mode = 'stop'
                 
                 # 부가영상

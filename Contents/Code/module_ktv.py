@@ -69,7 +69,7 @@ class ModuleKtv(AgentBase):
                             if score < 20:
                                 score = 20
                             if 'status' in series and series['status'] == 0:
-                                score += -40
+                                score = score -40
                             results.Append(MetadataSearchResult(id=series['code'], name=series['title'], year=series['year'], score=score, lang=lang))
                 # 미디어 단일, 메타 단일 or 미디어 시즌, 메타 단일
                 else:
@@ -78,12 +78,12 @@ class ModuleKtv(AgentBase):
                     meta = MetadataSearchResult(id=data['code'], name=data['title'], year=data['year'], thumb=data['image_url'], score=100, lang=lang)
                     tmp = data['extra_info'] + ' '
                     if data['status'] == 0:
-                        tmp += u'방송예정'
+                        tmp = tmp + u'방송예정'
                     elif data['status'] == 1:
-                        tmp += u'방송중'
+                        tmp = tmp + u'방송중'
                     elif data['status'] == 2:
-                        tmp += u'방송종료'
-                    tmp += self.search_result_line() + data['desc']
+                        tmp = tmp + u'방송종료'
+                    tmp = tmp + self.search_result_line() + data['desc']
                     meta.summary = tmp
                     meta.type = 'movie'
                     results.Append(meta)
@@ -162,7 +162,7 @@ class ModuleKtv(AgentBase):
                     metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
                     metadata_season.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
                 season_valid_names.append(item['value'])
-                poster_index += 1
+                poster_index = poster_index + 1
             elif item['aspect'] == 'landscape':
                 if item['thumb'] == '':
                     metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
@@ -171,13 +171,13 @@ class ModuleKtv(AgentBase):
                     metadata.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
                     metadata_season.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
                 season_valid_names.append(item['value'])
-                art_index += 1
+                art_index = art_index + 1
             elif item['aspect'] == 'banner':
                 if item['thumb'] == '': 
                     metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
                 else:
                     metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1) 
-                banner_index += 1
+                banner_index = banner_index + 1
         # 이거 확인필요. 번들제거 영향. 시즌을 주석처리안하면 쇼에 최후것만 입력됨.
         #metadata.posters.validate_keys(valid_names)
         #metadata.art.validate_keys(valid_names)
@@ -239,7 +239,7 @@ class ModuleKtv(AgentBase):
                     else:
                         try : episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['thumb']).content, sort_order=thumb_index+1)
                         except: pass
-                    thumb_index += 1
+                    thumb_index = thumb_index + 1
                     ott_mode = 'stop'
                 
                 # 부가영상

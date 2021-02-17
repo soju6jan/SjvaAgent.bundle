@@ -66,7 +66,7 @@ class ModuleOttShow(AgentBase):
                     actor = metadata.roles.new()
                     actor.role = item['role']
                     actor.name = item['name']
-                    actor.photo = item['thumb']
+                    actor.photo = item['thumb'] 
 
             # poster
             ProxyClass = Proxy.Preview 
@@ -79,19 +79,19 @@ class ModuleOttShow(AgentBase):
                         metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
                     else:
                         metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
-                    poster_index += 1
+                    poster_index = poster_index + 1
                 elif item['aspect'] == 'landscape':
                     if item['thumb'] == '':
                         metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
                     else:
                         metadata.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
-                    art_index += 1
+                    art_index = art_index + 1
                 elif item['aspect'] == 'banner':
                     if item['thumb'] == '':
                         metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
                     else:
                         metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1)
-                    banner_index += 1  
+                    banner_index = banner_index + 1  
 
             metadata.posters.validate_keys(valid_names)
             metadata.art.validate_keys(valid_names)

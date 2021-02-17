@@ -40,8 +40,10 @@ def AddExtra(extras, extra_type, extra_title, extra_path):
       Log('Found %s extra: %s' % (extra_type, extra_title))
       extras.append({'type' : extra_type, 'title' : extra_title, 'sort_title' : sort_title, 'file' : extra_path, 'thumb' : image})
       extras_list.append(extra_path)
+
   except:
     Log('AddExtra exception')
+  
   
 def FindExtras(media_title, metadata, paths, basename=None):
   # Do a quick check to make sure we've got the extra types available in this framework version,
