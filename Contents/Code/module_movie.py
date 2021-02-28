@@ -72,7 +72,7 @@ class ModuleMovie(AgentBase):
                 else:
                     metadata.rating = item['value']
                     metadata.audience_rating = 0.0
-                    metadata.rating_image = 'rottentomatoes://image.rating.spilled' if item['value'] < 7 else 'rottentomatoes://image.rating.upright'
+                    metadata.rating_image = 'rottentomatoes://image.rating.spilled' if item['value']*10 < meta_info['movie_rating_score'] else 'rottentomatoes://image.rating.upright'
                 break
      
             # role
