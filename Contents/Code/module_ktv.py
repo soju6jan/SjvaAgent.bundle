@@ -6,7 +6,6 @@ from .agent_base import AgentBase
 class ModuleKtv(AgentBase):
     module_name = 'ktv'
     
-
     def get_year(self, media):
         try:
             data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
@@ -22,17 +21,12 @@ class ModuleKtv(AgentBase):
             Log(traceback.format_exc())
 
 
-
     def search(self, results, media, lang, manual):
         try:
             Log('SEARCH : %s' % media.show)
             keyword = media.show
             Log('>> %s : %s' % (self.module_name, keyword))
-
-            #Log(self.get_year(media))
-
             search_data = self.send_search(self.module_name, keyword, manual)
-
             if search_data is None:
                 return
             #Log(json.dumps(search_data, indent=4))
@@ -101,9 +95,6 @@ class ModuleKtv(AgentBase):
                 func(search_data['tving'])
             if 'wavve' in search_data:
                 func(search_data['wavve'])
-
-                
-
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
@@ -122,12 +113,17 @@ class ModuleKtv(AgentBase):
         for tmp in meta_info['genre']:
             metadata.genres.add(tmp) 
         
+        module_prefs = self.get_module_prefs(self.module_name)
         # 부가영상
         for item in meta_info['extras']:
             if item['mode'] == 'mp4':
                 url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
             elif item['mode'] == 'kakao':
-                url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=item['mode'], param=item['content_url'], apikey=Prefs['apikey'])
+                url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(
+                    ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
+                    site=item['mode'], 
+                    param=item['content_url'], 
+                    apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'])
                 url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
             metadata.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
 
@@ -243,11 +239,15 @@ class ModuleKtv(AgentBase):
                     ott_mode = 'stop'
                 
                 # 부가영상
+                module_prefs = self.get_module_prefs(self.module_name)
                 for item in episode_info['extras']:
                     if item['mode'] == 'mp4':
                         url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
                     elif item['mode'] == 'kakao':
-                        url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=extra['mode'], param=extra['content_url'], apikey=Prefs['apikey'])
+                        url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'], 
+                        site=extra['mode'], 
+                        param=extra['content_url'], 
+                        apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'])
                         url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
                         #url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
                     episode.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
@@ -281,6 +281,7 @@ class ModuleKtv(AgentBase):
     def update(self, metadata, media, lang):
         #self.base_update(metadata, media, lang)
         try:
+            module_prefs = self.get_module_prefs(self.module_name)
             flag_ending = False
             flag_media_season = False
             if len(media.seasons) > 1:
@@ -318,9 +319,19 @@ class ModuleKtv(AgentBase):
                     metadata.title = media.title.split('|')[0].strip()
                 else:
                     metadata.title = meta_info['title']
+                    
+
                 metadata.original_title = metadata.title                  
                 metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
                 
+                if flag_media_season == False and meta_info['status'] == 2 and  module_prefs['end_noti_filepath'] != '':
+                    parts = media.seasons[media_season_index].all_parts()
+                    end_noti_filepath = module_prefs['end_noti_filepath'].split('|')
+                    for tmp in end_noti_filepath:
+                        if parts[0].file.find(tmp) != -1:
+                            metadata.title = u'[종영]%s' % metadata.title
+                            break
+
                 metadata_season = metadata.seasons[media_season_index]
                 self.update_info(metadata, metadata_season, meta_info)
                 
@@ -394,7 +405,6 @@ class ModuleKtv(AgentBase):
                     url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[media_season_index].id, urllib.quote(season_title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
                 request = PutRequest(url)
                 response = urllib2.urlopen(request)
-
 
 
         except Exception as e: 

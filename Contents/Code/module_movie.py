@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata, random
+import os, traceback, json, urllib, re, unicodedata, random, time
 from .agent_base import AgentBase
 
 class ModuleMovie(AgentBase):
@@ -21,8 +21,14 @@ class ModuleMovie(AgentBase):
             if search_data is None:
                 return 
 
+            module_prefs = self.get_module_prefs(self.module_name)
             for item in search_data:
-                meta = MetadataSearchResult(id=item['code'], name=item['title'], year=item['year'], score=item['score'], thumb=item['image_url'], lang=lang)
+                meta_id = item['code']
+                if module_prefs['include_time_info'] == 'true':
+                    meta_id += '|%s' % int(time.time())
+                Log(meta_id)
+                Log(meta_id)
+                meta = MetadataSearchResult(id=meta_id, name=item['title'], year=item['year'], score=item['score'], thumb=item['image_url'], lang=lang)
                 meta.summary = self.change_html(item['desc']) + self.search_result_line() + item['site']
                 meta.type = "movie"
                 results.Append(meta)
@@ -38,7 +44,7 @@ class ModuleMovie(AgentBase):
 
     def update(self, metadata, media, lang):
         try:
-            meta_info = self.send_info(self.module_name, metadata.id)
+            meta_info = self.send_info(self.module_name, metadata.id.split('|')[0])
             #Log(json.dumps(meta_info, indent=4))
             metadata.title = meta_info['title']
             metadata.original_title = meta_info['originaltitle']
@@ -162,6 +168,7 @@ class ModuleMovie(AgentBase):
                 )
                 metadata.extras.add(extra_media)
 
+            module_prefs = self.get_module_prefs(self.module_name)
             for extra in meta_info['extras']:
                 if extra['thumb'] is None or extra['thumb'] == '':
                     thumb = art_list[random.randint(0, len(art_list)-1)]
@@ -170,10 +177,10 @@ class ModuleMovie(AgentBase):
                 extra_url = None
                 if extra['mode'] in ['naver', 'youtube', 'kakao']:
                     url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(
-                        ddns=Prefs['server'],
+                        ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
                         site=extra['mode'],
                         param=extra['content_url'],
-                        apikey=Prefs['apikey']
+                        apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey']
                     )
                     extra_url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (extra['mode'], url)
                 #elif extra['mode'] == 'kakao':

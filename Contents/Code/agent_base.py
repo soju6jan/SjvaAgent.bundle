@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, traceback, json, urllib, re, unicodedata, time
+from io import open
 from functools import wraps
 
 
@@ -28,7 +29,6 @@ class AgentBase(object):
         # 오디오북?
     }
 
-
     extra_map = {
         'Trailer' : TrailerObject,
         'DeletedScene' : DeletedSceneObject,
@@ -56,17 +56,16 @@ class AgentBase(object):
         return wrapper_function
 
     
-
-
     def send_search(self, module_name, keyword, manual, year=''):
         try:
+            module_prefs = self.get_module_prefs(module_name)
             url = '{ddns}/metadata/api/{module_name}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}'.format(
-              ddns=Prefs['server'],
+              ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
               module_name=module_name,
               keyword=urllib.quote(keyword.encode('utf8')),
               manual=manual,
               year=year,
-              apikey=Prefs['apikey']
+              apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey']
             )
             Log(url)
             return AgentBase.my_JSON_ObjectFromURL(url)
@@ -77,11 +76,12 @@ class AgentBase(object):
 
     def send_info(self, module_name, code, title=None):
         try:
+            module_prefs = self.get_module_prefs(module_name)
             url = '{ddns}/metadata/api/{module_name}/info?code={code}&call=plex&apikey={apikey}'.format(
-              ddns=Prefs['server'],
+              ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
               module_name=module_name,
               code=urllib.quote(code.encode('utf8')),
-              apikey=Prefs['apikey']
+              apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey']
             )
             if title is not None:
                 url += '&title=' + urllib.quote(title.encode('utf8'))
@@ -94,11 +94,12 @@ class AgentBase(object):
 
     def send_episode_info(self, module_name, code):
         try:
+            module_prefs = self.get_module_prefs(module_name)
             url = '{ddns}/metadata/api/{module_name}/episode_info?code={code}&call=plex&apikey={apikey}'.format(
-              ddns=Prefs['server'],
+              ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
               module_name=module_name,
               code=urllib.quote(code.encode('utf8')),
-              apikey=Prefs['apikey']
+              apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey']
             )
             Log(url)
             return AgentBase.my_JSON_ObjectFromURL(url)
@@ -111,6 +112,24 @@ class AgentBase(object):
         if text is not None:
             return text.replace('&nbsp;', ' ').replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"').replace('&#35;', '#').replace('&#39;', "‘")
 
+
+    def get_module_prefs(self, module):
+        try:
+            ret = {}
+            CURRENT_PATH = re.sub(r'^\\\\\?\\', '', os.getcwd())
+            pref_filepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(CURRENT_PATH))), 'Plug-in Support', 'Preferences', 'com.plexapp.agents.sjva_agent_%s.xml' % module)
+            if os.path.exists(pref_filepath):
+                tfile = open(pref_filepath, encoding='utf8')
+                text = tfile.read()
+                tfile.close()
+                if text is not None:
+                    prefs = XML.ElementFromString(text)
+                    for child in prefs.getchildren():
+                        ret[child.tag] = child.text
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+        return ret
 
 
     @staticmethod

@@ -99,6 +99,7 @@ class ModuleOttShow(AgentBase):
 
             tmp = [int(x) for x in meta_info['extra_info']['episodes'].keys()]
             no_list = sorted(tmp, reverse=True)
+            module_prefs = self.get_module_prefs(self.module_name)
             for no in no_list:
                 info = meta_info['extra_info']['episodes'][str(no)]
                 Log(no)      
@@ -107,10 +108,10 @@ class ModuleOttShow(AgentBase):
                 for site in ['tving', 'wavve']:
                     if site in info:
                         url = '{ddns}/metadata/api/{module_name}/stream.m3u8?code={code}&call=plex&apikey={apikey}'.format(
-                            ddns=Prefs['server'],
+                            ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
                             module_name=self.module_name,
                             code=info[site]['code'],
-                            apikey=Prefs['apikey'],
+                            apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'],
                         )
                         url = 'sjva://sjva.me/%s/%s|%s' % ('redirect.m3u8' if site=='tving' else 'ott', site, url)
                         title = info[site]['title'] if info[site]['title'] != '' else info[site]['plot']
@@ -120,16 +121,6 @@ class ModuleOttShow(AgentBase):
                             thumb=info[site]['thumb'],
                         )
                         metadata.extras.add(extra_media)
-                        Log('vvvvvvvvvvvvvvvvvvvvvvvvvvvvv')
-                        Log(extra_media)
-                        Log(extra_media.index)
-                        Log('wwwwwwwwwwwwwwwwwwwwwwwwwwww')
-                        
-
- 
-
-
-
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
