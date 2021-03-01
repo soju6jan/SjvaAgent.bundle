@@ -115,7 +115,7 @@ class AgentBase(object):
 
     def get_module_prefs(self, module):
         try:
-            ret = {}
+            ret = {'server':'', 'apikey':'', 'end_noti_filepath':'', 'include_time_info':''}
             CURRENT_PATH = re.sub(r'^\\\\\?\\', '', os.getcwd())
             pref_filepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(CURRENT_PATH))), 'Plug-in Support', 'Preferences', 'com.plexapp.agents.sjva_agent_%s.xml' % module)
             if os.path.exists(pref_filepath):
@@ -126,6 +126,7 @@ class AgentBase(object):
                     prefs = XML.ElementFromString(text)
                     for child in prefs.getchildren():
                         ret[child.tag] = child.text
+            
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
