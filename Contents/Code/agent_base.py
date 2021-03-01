@@ -125,7 +125,8 @@ class AgentBase(object):
                 if text is not None:
                     prefs = XML.ElementFromString(text)
                     for child in prefs.getchildren():
-                        ret[child.tag] = child.text
+                        ret[child.tag] = '' if child.text is None else child.text
+
             
         except Exception as e: 
             Log('Exception:%s', e)
