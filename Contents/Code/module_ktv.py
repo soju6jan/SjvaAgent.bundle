@@ -245,8 +245,8 @@ class ModuleKtv(AgentBase):
                         url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
                     elif item['mode'] == 'kakao':
                         url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'], 
-                        site=extra['mode'], 
-                        param=extra['content_url'], 
+                        site=item['mode'], 
+                        param=item['content_url'], 
                         apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'])
                         url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
                         #url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
