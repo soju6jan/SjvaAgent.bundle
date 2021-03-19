@@ -7,21 +7,6 @@ class ModuleFtv(AgentBase):
     module_name = 'ftv'
     
 
-    def get_year(self, media):
-        try:
-            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
-            # 시즌
-            Log(json.dumps(data, indent=4))
-            filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
-            ret = os.path.splitext(os.path.basename(filename))[0]
-            match = Regex(r'(?P<date>\d{6})').search(ret) 
-            if match:
-                return match.group('date')
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
-
-
 
     def search(self, results, media, lang, manual):
         try:
@@ -29,8 +14,6 @@ class ModuleFtv(AgentBase):
             Log('SEARCH : %s' % media.show)
             keyword = media.show
             Log('>> [%s] [%s] [%s]' % (self.module_name, keyword, media.year))
- 
-            
             search_data = self.send_search(self.module_name, keyword, manual, year=media.year)
 
             if search_data is None:
@@ -38,7 +21,7 @@ class ModuleFtv(AgentBase):
 
             for item in search_data:
                 meta = MetadataSearchResult(id=item['code'], name=item['title'], year=item['year'], score=item['score'], thumb=item['image_url'], lang=lang)
-                meta.summary = self.change_html(item['desc']) + self.search_result_line() + item['site']
+                meta.summary = self.change_html(item['desc']) + self.search_result_line() + item['site'] + ' 원제 : %s' % item['title_original']
                 meta.type = "movie"
                 results.Append(meta)
 
@@ -57,9 +40,8 @@ class ModuleFtv(AgentBase):
             meta_info = self.send_info(self.module_name, metadata.id)
             
             Log(json.dumps(meta_info, indent=4))
-            self.update_info(metadata, meta_info)
+            self.update_info(metadata, meta_info, media)
             
-
             index_list = [index for index in media.seasons]
             index_list = sorted(index_list)
             #for media_season_index in media.seasons:
@@ -73,7 +55,8 @@ class ModuleFtv(AgentBase):
                 @parallelize
                 def UpdateEpisodes():
                     metadata_season = metadata.seasons[media_season_index]
-                    self.update_season(media_season_index, metadata_season, meta_info)
+                    season_meta_info = self.send_info(self.module_name, '%s_%s' % (metadata.id, media_season_index))
+                    self.update_season(media_season_index, metadata_season, season_meta_info, media)
                     
                     for media_episode_index in media.seasons[media_season_index].episodes:
                         metadata_episode = metadata.seasons[media_season_index].episodes[media_episode_index]
@@ -82,63 +65,30 @@ class ModuleFtv(AgentBase):
                         def UpdateEpisode(metadata_episode=metadata_episode, media_season_index=media_season_index, media_episode_index=media_episode_index):
 
                             try:
-                                episode_meta_info = meta_info['seasons'][media_season_index]['episodes'][media_episode_index]
-                                metadata_episode.originally_available_at = Datetime.ParseDate(episode_meta_info['premiered']).date()
-                                metadata_episode.title = episode_meta_info['title']
-                                metadata_episode.summary = episode_meta_info['plot']
-                                try: metadata_episode.thumbs[episode_meta_info['art'][-1]] = Proxy.Preview(HTTP.Request(episode_meta_info['art'][-1]).content, sort_order=1)
-                                except: pass
+                                idx_str = str(media_episode_index)
+                                if idx_str in season_meta_info['episodes']:
+                                    episode_meta_info = season_meta_info['episodes'][idx_str]
+                                    metadata_episode.originally_available_at = Datetime.ParseDate(episode_meta_info['premiered']).date()
+                                    metadata_episode.title = episode_meta_info['title']
+                                    metadata_episode.summary = episode_meta_info['plot']
+                                    try: metadata_episode.thumbs[episode_meta_info['art'][-1]] = Proxy.Preview(HTTP.Request(episode_meta_info['art'][-1]).content, sort_order=1)
+                                    except: pass
 
-                                metadata_episode.directors.clear()
-                                metadata_episode.producers.clear()
-                                metadata_episode.writers.clear()
-                                for item in episode_meta_info['writers']:
-                                    meta = metadata_episode.writers.new()
-                                    meta.name = item
-                                for item in episode_meta_info['directors']:
-                                    meta = metadata_episode.directors.new()
-                                    meta.name = item
-                                for item in episode_meta_info['guests']:
-                                    meta = metadata_episode.guest_stars.new()
-                                    meta.name = item
+                                    metadata_episode.directors.clear()
+                                    metadata_episode.producers.clear()
+                                    metadata_episode.writers.clear()
+                                    for item in episode_meta_info['writer']:
+                                        meta = metadata_episode.writers.new()
+                                        meta.name = item
+                                    for item in episode_meta_info['director']:
+                                        meta = metadata_episode.directors.new()
+                                        meta.name = item
+                                    for item in episode_meta_info['guest']:
+                                        meta = metadata_episode.guest_stars.new()
+                                        meta.name = item
                             except Exception as e: 
                                 Log('Exception:%s', e)
                                 Log(traceback.format_exc())
-
-
-            return
-            # 시즌 title, summary
-            if not flag_media_season:
-                return
-            url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
-            data = JSON.ObjectFromURL(url)
-            section_id = data['MediaContainer']['librarySectionID']
-            token = Request.Headers['X-Plex-Token']
-            for media_season_index in media.seasons:
-                Log('media_season_index is %s', media_season_index)
-                if media_season_index == '0':
-                    continue
-                filepath = media.seasons[media_season_index].all_parts()[0].file
-                tmp = os.path.basename(os.path.dirname(filepath))
-                season_title = None
-                if tmp != metadata.title:
-                    Log(tmp)
-                    match = Regex(r'(?P<season_num>\d{1,4})\s*(?P<season_title>.*?)$').search(tmp)
-                    if match:
-                        Log('season_num : %s', match.group('season_num'))
-                        Log('season_title : %s', match.group('season_title'))
-                        if match.group('season_num') == media_season_index and match.group('season_title') is not None:
-                            season_title = match.group('season_title')
-                metadata_season = metadata.seasons[media_season_index]
-                if season_title is None:
-                    url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[media_season_index].id, urllib.quote(metadata_season.summary.encode('utf8')), token)
-                else:
-                    url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[media_season_index].id, urllib.quote(season_title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
-                request = PutRequest(url)
-                response = urllib2.urlopen(request)
-
-
-
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
@@ -147,9 +97,20 @@ class ModuleFtv(AgentBase):
 
 
 
-    def update_info(self, metadata, meta_info):
+    def update_info(self, metadata, meta_info, media):
         metadata.title = meta_info['title']
-        metadata.original_title = meta_info['originaltitle']                 
+        metadata.original_title = meta_info['originaltitle']  
+
+        url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
+        data = JSON.ObjectFromURL(url)
+        section_id = data['MediaContainer']['librarySectionID']
+        token = Request.Headers['X-Plex-Token']
+
+        url = 'http://127.0.0.1:32400/library/sections/%s/all?type=2&id=%s&originalTitle.value=%s&X-Plex-Token=%s' % (section_id, media.id, urllib.quote(metadata.original_title.encode('utf8')), token)
+        request = PutRequest(url)
+        response = urllib2.urlopen(request)
+
+
         metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
         metadata.studio = meta_info['studio']
         try: metadata.originally_available_at = Datetime.ParseDate(meta_info['premiered']).date()
@@ -158,21 +119,26 @@ class ModuleFtv(AgentBase):
         metadata.summary = meta_info['plot']
         metadata.genres.clear()
         for tmp in meta_info['genre']:
-            metadata.genres.add(tmp) 
+            metadata.genres.add(tmp)
+        #if meta_info['episode_run_time'] > 0:
+        #    metadata.duration = meta_info['episode_run_time']
 
         # 부가영상
-        for item in meta_info['extras']:
-            if item['mode'] == 'mp4':
-                url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
-            elif item['mode'] == 'kakao':
-                url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=item['mode'], param=item['content_url'], apikey=Prefs['apikey'])
-                url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
-            metadata.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
+        if 'extras' in meta_info:
+            for item in meta_info['extras']:
+                if item['mode'] == 'mp4':
+                    url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
+                elif item['mode'] == 'kakao':
+                    url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=item['mode'], param=item['content_url'], apikey=Prefs['apikey'])
+                    url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
+                metadata.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
 
         # rating
         for item in meta_info['ratings']:
-            metadata.rating = item['value']
-            metadata.audience_rating = 0.0
+            if item['name'] == 'tmdb':
+                metadata.rating = item['value']
+                metadata.audience_rating = 0.0
+                metadata.rating_image = 'imdb://image.rating'
 
         # role
         metadata.roles.clear()
@@ -180,6 +146,8 @@ class ModuleFtv(AgentBase):
             actor = metadata.roles.new()
             actor.role = item['role']
             actor.name = item['name']
+            if actor.name == '':
+                actor.name = item['name_original']
             actor.photo = item['image']
             Log('%s - %s'% (actor.name, actor.photo))
 
@@ -202,30 +170,43 @@ class ModuleFtv(AgentBase):
         #metadata_season.art.validate_keys(season_valid_names)
 
         # 테마2
-        # Get the TVDB id from the Movie Database Agent
-        tvdb_id = meta_info['code'][2:]
-        Log('TVDB_ID : %s', tvdb_id)
-        THEME_URL = 'https://tvthemes.plexapp.com/%s.mp3'
-        if tvdb_id and THEME_URL % tvdb_id not in metadata.themes:
-            tmp = THEME_URL % tvdb_id
+        
+        if 'use_theme' in meta_info and meta_info['use_theme']:
             try: 
-                metadata.themes[tmp] = Proxy.Media(HTTP.Request(THEME_URL % tvdb_id))
-                valid_names.append(tmp)
-                metadata.themes.validate_keys(tmp)
-            except: pass
-          
+                valid_names = []
+                if 'themes' in meta_info['extra_info']:
+                    for tmp in meta_info['extra_info']['themes']:
+                        if tmp not in metadata.themes:
+                            valid_names.append(tmp)
+                            metadata.themes[tmp] = Proxy.Media(HTTP.Request(tmp).content)
+                tvdb_id = None
+                for tmp in meta_info['code_list']:
+                    if tmp[0] == 'tvdb_id':
+                        tvdb_id = tmp[1]
+                        break
+                if tvdb_id is not None:
+                    url = 'https://tvthemes.plexapp.com/%s.mp3' % tvdb_id
+                    Log('테마 : %s', url)
+                    if url not in metadata.themes:
+                        valid_names.append(url)
+                        metadata.themes[url] = Proxy.Media(HTTP.Request(url))
+                metadata.themes.validate_keys(valid_names)
+            except Exception as e: 
+                Log('Exception:%s', e)
+                Log(traceback.format_exc())
+            
 
 
 
 
 
-    def update_season(self, season_no, metadata_season, meta_info):
+    def update_season(self, season_no, metadata_season, meta_info, media):
+        Log(json.dumps(meta_info, indent=4))
         valid_names = []
         poster_index = art_index = banner_index = 0
         art_map = {'poster': [metadata_season.posters, 0], 'landscape' : [metadata_season.art, 0], 'banner':[metadata_season.banners, 0]}
         Log('Season no : %s' % season_no)
-        Log(season_no in meta_info['seasons'])
-        for item in sorted(meta_info['seasons'][season_no]['art'], key=lambda k: k['score'], reverse=True):
+        for item in sorted(meta_info['art'], key=lambda k: k['score'], reverse=True):
             valid_names.append(item['value'])
             try:
                 target = art_map[item['aspect']]
@@ -233,6 +214,34 @@ class ModuleFtv(AgentBase):
                 target[1] = target[1] + 1
             except: pass 
         
+        metadata_season.summary = meta_info['plot']
+        metadata_season.title = meta_info['season_name']
+
+        # 시즌 title, summary
+        url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
+        data = JSON.ObjectFromURL(url)
+        section_id = data['MediaContainer']['librarySectionID']
+        token = Request.Headers['X-Plex-Token']
+
+        url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[season_no].id, urllib.quote(metadata_season.title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
+        request = PutRequest(url)
+        response = urllib2.urlopen(request)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -297,7 +306,7 @@ class ModuleFtv(AgentBase):
                             except: pass
                 
             #episode.thumbs.validate_keys(valid_names)
-
+ 
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
