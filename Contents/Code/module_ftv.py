@@ -6,8 +6,6 @@ from .agent_base import AgentBase
 class ModuleFtv(AgentBase):
     module_name = 'ftv'
     
-
-
     def search(self, results, media, lang, manual):
         try:
             media.show = unicodedata.normalize('NFC', unicode(media.show)).strip()
@@ -44,26 +42,30 @@ class ModuleFtv(AgentBase):
             
             index_list = [index for index in media.seasons]
             index_list = sorted(index_list)
-            #for media_season_index in media.seasons:
-            for media_season_index in index_list:
-                Log('media_season_index is %s', media_season_index)
-                if media_season_index == '0':
-                    continue
-                
-                # 포스터
-                # Get episode data.
-                @parallelize
-                def UpdateEpisodes():
-                    metadata_season = metadata.seasons[media_season_index]
-                    season_meta_info = self.send_info(self.module_name, '%s_%s' % (metadata.id, media_season_index))
-                    self.update_season(media_season_index, metadata_season, season_meta_info, media)
+
+            @parallelize
+            def UpdateEpisodes():
+                #for media_season_index in media.seasons:
+                for media_season_index in index_list:
+                    Log('media_season_index is %s', media_season_index)
+                    if media_season_index == '0':
+                        continue
                     
-                    for media_episode_index in media.seasons[media_season_index].episodes:
-                        metadata_episode = metadata.seasons[media_season_index].episodes[media_episode_index]
+                    # 포스터
+                    # Get episode data.
+                    @task
+                    def UpdateSeason(media_season_index=media_season_index,  media=media):
+                        Log('UpdateSeason : %s', media_season_index)
+                        metadata_season = metadata.seasons[media_season_index]
+                        season_meta_info = self.send_info(self.module_name, '%s_%s' % (metadata.id, media_season_index))
+                        self.update_season(media_season_index, metadata_season, season_meta_info, media)
+                    
+                        for media_episode_index in media.seasons[media_season_index].episodes:
+                            metadata_episode = metadata.seasons[media_season_index].episodes[media_episode_index]
 
-                        @task
-                        def UpdateEpisode(metadata_episode=metadata_episode, media_season_index=media_season_index, media_episode_index=media_episode_index):
-
+                            #@task
+                            #def UpdateEpisode(metadata_episode=metadata_episode, media_season_index=media_season_index, media_episode_index=media_episode_index, season_meta_info=season_meta_info):
+                            Log('UpdateEpisode : %s - %s', media_season_index, media_episode_index)
                             try:
                                 idx_str = str(media_episode_index)
                                 if idx_str in season_meta_info['episodes']:
@@ -90,6 +92,7 @@ class ModuleFtv(AgentBase):
                             except Exception as e: 
                                 Log('Exception:%s', e)
                                 Log(traceback.format_exc())
+                        Log('UpdateSeason end : %s', media_season_index)
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
@@ -101,15 +104,17 @@ class ModuleFtv(AgentBase):
     def update_info(self, metadata, meta_info, media):
         metadata.title = meta_info['title']
         metadata.original_title = meta_info['originaltitle']  
-
-        url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
-        data = JSON.ObjectFromURL(url)
-        section_id = data['MediaContainer']['librarySectionID']
-        token = Request.Headers['X-Plex-Token']
-
-        url = 'http://127.0.0.1:32400/library/sections/%s/all?type=2&id=%s&originalTitle.value=%s&X-Plex-Token=%s' % (section_id, media.id, urllib.quote(metadata.original_title.encode('utf8')), token)
-        request = PutRequest(url)
-        response = urllib2.urlopen(request)
+        try:
+            url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
+            data = JSON.ObjectFromURL(url)
+            section_id = data['MediaContainer']['librarySectionID']
+            token = self.get_token()
+            url = 'http://127.0.0.1:32400/library/sections/%s/all?type=2&id=%s&originalTitle.value=%s&X-Plex-Token=%s' % (section_id, media.id, urllib.quote(metadata.original_title.encode('utf8')), token)
+            request = PutRequest(url)
+            response = urllib2.urlopen(request)
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
 
 
         metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
@@ -220,99 +225,33 @@ class ModuleFtv(AgentBase):
         metadata_season.title = meta_info['season_name']
 
         # 시즌 title, summary
-        url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
-        data = JSON.ObjectFromURL(url)
-        section_id = data['MediaContainer']['librarySectionID']
-        token = Request.Headers['X-Plex-Token']
-
-        url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[season_no].id, urllib.quote(metadata_season.title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
-        request = PutRequest(url)
-        response = urllib2.urlopen(request)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def update_episode(self, show_epi_info, episode, frequency=None):
         try:
-            valid_names = []
-
-            if 'daum' in show_epi_info:
-                #if 'tving_id' in meta_info['extra_info']:
-                #    param += ('|' + 'V' + meta_info['extra_info']['tving_id'])
-                episode_info = self.send_episode_info(self.module_name, show_epi_info['daum']['code'])
-                try: episode.originally_available_at = Datetime.ParseDate(episode_info['premiered']).date()
-                except: pass
-                episode.title = episode_info['title']
-                episode.summary = episode_info['plot']
-
-                thumb_index = 30
-                ott_mode = 'only_thumb'
-                for item in sorted(episode_info['thumb'], key=lambda k: k['score'], reverse=True):
-                    valid_names.append(item['value'])
-                    if item['thumb'] == '':
-                        try: episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['value']).content, sort_order=thumb_index+1)
-                        except: pass
-                    else:
-                        try : episode.thumbs[item['value']] = Proxy.Preview(HTTP.Request(item['thumb']).content, sort_order=thumb_index+1)
-                        except: pass
-                    thumb_index = thumb_index + 1
-                    ott_mode = 'stop'
-                
-                # 부가영상
-                for item in episode_info['extras']:
-                    if item['mode'] == 'mp4':
-                        url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
-                    elif item['mode'] == 'kakao':
-                        url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=extra['mode'], param=extra['content_url'], apikey=Prefs['apikey'])
-                        url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
-                        #url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
-                    episode.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
-            else:
-                ott_mode = 'full'
-
-            if ott_mode != 'stop':
-                for site in ['tving', 'wavve']:
-                    if site in show_epi_info:
-                        if ott_mode == 'full':
-                            try: episode.originally_available_at = Datetime.ParseDate(show_epi_info[site]['premiered']).date()
-                            except: pass
-                            episode.title = show_epi_info[site]['premiered']
-                            if frequency is not None:
-                                episode.title = u'%s회 (%s)' % (frequency, episode.title)
-                            episode.summary = show_epi_info[site]['plot']
-
-                        if ott_mode in ['full', 'only_thumb']:
-                            thumb_index = 20
-                            valid_names.append(show_epi_info[site]['thumb'])
-                            try: episode.thumbs[show_epi_info[site]['thumb']] = Proxy.Preview(HTTP.Request(show_epi_info[site]['thumb']).content, sort_order=thumb_index+1)
-                            except: pass
-                
-            #episode.thumbs.validate_keys(valid_names)
- 
+            url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
+            data = JSON.ObjectFromURL(url)
+            section_id = data['MediaContainer']['librarySectionID']
+            token = self.get_token()
+            url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[season_no].id, urllib.quote(metadata_season.title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
+            request = PutRequest(url)
+            response = urllib2.urlopen(request)
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class PutRequest(urllib2.Request):

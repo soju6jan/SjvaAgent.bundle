@@ -40,6 +40,8 @@ class AgentBase(object):
         'Other' : OtherObject
     }
     
+    token = None
+
     def search_result_line(self):
         text = ' ' + ' '.ljust(80, "=") + ' '
         return text
@@ -178,6 +180,17 @@ class AgentBase(object):
             Log('Exception:%s', e)
             Log(traceback.format_exc())
     
+    def get_token(self):
+        try:
+            if self.token is None:
+                url = 'http://127.0.0.1:32400/myplex/account'
+                data = JSON.ObjectFromURL(url)
+                self.token = data['MyPlex']['authToken']
+            return self.token
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+
     """
     LyricFind.bundle/Contents/Code/__init__.py:      metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = 'lrc', sort_order=sort_order)
 ./LyricFind.bundle/Contents/Code/__init__.py:    metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = 'txt', sort_order=sort_order)
