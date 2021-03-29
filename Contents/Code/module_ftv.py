@@ -39,7 +39,7 @@ class ModuleFtv(AgentBase):
         try: 
             meta_info = self.send_info(self.module_name, metadata.id)
             
-            Log(json.dumps(meta_info, indent=4))
+            #Log(json.dumps(meta_info, indent=4))
             self.update_info(metadata, meta_info, media)
             
             index_list = [index for index in media.seasons]
@@ -203,7 +203,7 @@ class ModuleFtv(AgentBase):
 
 
     def update_season(self, season_no, metadata_season, meta_info, media):
-        Log(json.dumps(meta_info, indent=4))
+        #Log(json.dumps(meta_info, indent=4))
         valid_names = []
         poster_index = art_index = banner_index = 0
         art_map = {'poster': [metadata_season.posters, 0], 'landscape' : [metadata_season.art, 0], 'banner':[metadata_season.banners, 0]}
