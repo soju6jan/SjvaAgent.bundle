@@ -68,7 +68,8 @@ class ModuleFtv(AgentBase):
                                 idx_str = str(media_episode_index)
                                 if idx_str in season_meta_info['episodes']:
                                     episode_meta_info = season_meta_info['episodes'][idx_str]
-                                    metadata_episode.originally_available_at = Datetime.ParseDate(episode_meta_info['premiered']).date()
+                                    try: metadata_episode.originally_available_at = Datetime.ParseDate(episode_meta_info['premiered']).date()
+                                    except: pass
                                     metadata_episode.title = episode_meta_info['title']
                                     metadata_episode.summary = episode_meta_info['plot']
                                     try: metadata_episode.thumbs[episode_meta_info['art'][-1]] = Proxy.Preview(HTTP.Request(episode_meta_info['art'][-1]).content, sort_order=1)
@@ -131,7 +132,8 @@ class ModuleFtv(AgentBase):
                 elif item['mode'] == 'kakao':
                     url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=item['mode'], param=item['content_url'], apikey=Prefs['apikey'])
                     url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
-                metadata.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
+                try: metadata.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
+                except: pass
 
         # rating
         for item in meta_info['ratings']:
@@ -259,8 +261,8 @@ class ModuleFtv(AgentBase):
                 #if 'tving_id' in meta_info['extra_info']:
                 #    param += ('|' + 'V' + meta_info['extra_info']['tving_id'])
                 episode_info = self.send_episode_info(self.module_name, show_epi_info['daum']['code'])
-
-                episode.originally_available_at = Datetime.ParseDate(episode_info['premiered']).date()
+                try: episode.originally_available_at = Datetime.ParseDate(episode_info['premiered']).date()
+                except: pass
                 episode.title = episode_info['title']
                 episode.summary = episode_info['plot']
 
@@ -293,7 +295,8 @@ class ModuleFtv(AgentBase):
                 for site in ['tving', 'wavve']:
                     if site in show_epi_info:
                         if ott_mode == 'full':
-                            episode.originally_available_at = Datetime.ParseDate(show_epi_info[site]['premiered']).date()
+                            try: episode.originally_available_at = Datetime.ParseDate(show_epi_info[site]['premiered']).date()
+                            except: pass
                             episode.title = show_epi_info[site]['premiered']
                             if frequency is not None:
                                 episode.title = u'%s회 (%s)' % (frequency, episode.title)
