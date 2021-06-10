@@ -1,0 +1,20 @@
+[
+	{
+		"id": "server",
+		"label": "SJVA 주소",
+		"type": "text",
+		"default": ""
+	},
+	{
+		"id": "apikey",
+		"label": "SJVA APIKEY",
+		"type": "text",
+		"default": ""
+	},
+	{
+		"id": "use_alsong",
+		"label": "Use alsong server",
+		"type": "bool",
+		"default": "false"
+	}
+]
