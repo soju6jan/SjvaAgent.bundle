@@ -30,7 +30,7 @@ class ModuleKtv(AgentBase):
             if search_data is None:
                 return
             #Log(json.dumps(search_data, indent=4))
-
+            daum_max_score = 100
             if 'daum' in search_data:
                 data = search_data['daum']
                 flag_media_season = False
@@ -72,6 +72,7 @@ class ModuleKtv(AgentBase):
                     # 2021-06-27 동명 컨텐츠중 년도 매칭되는것을 100으로 주기위해 99로 변경
                     if 'equal_name' in data and len(data['equal_name']) > 0:
                         score = 99
+                        daum_max_score = 99
                     else:
                         score = 100
                     meta = MetadataSearchResult(id=data['code'], name=data['title'], year=data['year'], thumb=data['image_url'], score=score, lang=lang)
@@ -95,7 +96,7 @@ class ModuleKtv(AgentBase):
                             results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=80 - (index*5), lang=lang))
             def func(show_list):
                 for idx, item in enumerate(show_list):
-                    meta = MetadataSearchResult(id=item['code'], name=item['title'], score=item['score'], thumb=item['image_url'], lang=lang)
+                    meta = MetadataSearchResult(id=item['code'], name=item['title'], score=min(daum_max_score, item['score']), thumb=item['image_url'], lang=lang)
                     meta.summary = item['site'] + ' ' + item['studio']
                     meta.type = "movie"
                     results.Append(meta)
