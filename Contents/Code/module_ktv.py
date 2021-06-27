@@ -69,7 +69,8 @@ class ModuleKtv(AgentBase):
                 else:
                     # 2019-05-23 미리보기 에피들이 많아져서 그냥 방송예정도 선택되게.
                     #if data['status'] != 0:
-                    meta = MetadataSearchResult(id=data['code'], name=data['title'], year=data['year'], thumb=data['image_url'], score=100, lang=lang)
+                    # 2021-06-27 동명 컨텐츠중 년도 매칭되는것을 100으로 주기위해 99로 변경
+                    meta = MetadataSearchResult(id=data['code'], name=data['title'], year=data['year'], thumb=data['image_url'], score=99, lang=lang)
                     tmp = data['extra_info'] + ' '
                     if data['status'] == 0:
                         tmp = tmp + u'방송예정'
@@ -84,7 +85,10 @@ class ModuleKtv(AgentBase):
 
                 if 'equal_name' in data:
                     for index, program in enumerate(data['equal_name']):
-                        results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=80 - (index*5), lang=lang))
+                        if program['year'] == media.year:
+                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=100 - (index), lang=lang))
+                        else:
+                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=80 - (index*5), lang=lang))
             def func(show_list):
                 for idx, item in enumerate(show_list):
                     meta = MetadataSearchResult(id=item['code'], name=item['title'], score=item['score'], thumb=item['image_url'], lang=lang)
