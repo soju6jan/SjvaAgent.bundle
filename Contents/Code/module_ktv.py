@@ -31,6 +31,7 @@ class ModuleKtv(AgentBase):
                 return
             #Log(json.dumps(search_data, indent=4))
             daum_max_score = 100
+            equal_max_score = 100
             if 'daum' in search_data:
                 data = search_data['daum']
                 flag_media_season = False
@@ -75,6 +76,7 @@ class ModuleKtv(AgentBase):
                         #나의 아저씨 동명 같은 년도
                         if data['year'] == media.year:
                             score = daum_max_score = 100
+                            equal_max_score = 99
                     else:
                         score = 100
                     meta = MetadataSearchResult(id=data['code'], name=data['title'], year=data['year'], thumb=data['image_url'], score=score, lang=lang)
@@ -93,9 +95,9 @@ class ModuleKtv(AgentBase):
                 if 'equal_name' in data:
                     for index, program in enumerate(data['equal_name']):
                         if program['year'] == media.year:
-                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=100 - (index), lang=lang))
+                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=min(equal_max_score, 100 - (index)), lang=lang))
                         else:
-                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=80 - (index*5), lang=lang))
+                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=min(equal_max_score, 80 - (index*5)), lang=lang))
             def func(show_list):
                 for idx, item in enumerate(show_list):
                     meta = MetadataSearchResult(id=item['code'], name=item['title'], score=min(daum_max_score, item['score']), thumb=item['image_url'], lang=lang)
