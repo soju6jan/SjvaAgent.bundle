@@ -71,8 +71,10 @@ class ModuleKtv(AgentBase):
                     #if data['status'] != 0:
                     # 2021-06-27 동명 컨텐츠중 년도 매칭되는것을 100으로 주기위해 99로 변경
                     if 'equal_name' in data and len(data['equal_name']) > 0:
-                        score = 99
-                        daum_max_score = 99
+                        score = daum_max_score = 99
+                        #나의 아저씨 동명 같은 년도
+                        if data['year'] == media.year:
+                            score = daum_max_score = 100
                     else:
                         score = 100
                     meta = MetadataSearchResult(id=data['code'], name=data['title'], year=data['year'], thumb=data['image_url'], score=score, lang=lang)
