@@ -29,13 +29,11 @@ class ModuleKtv(AgentBase):
             
             search_data = None
             search_key = u'search|%s' % keyword
-            Log('>>>>>>>>>>>>>>>>>>111111 %s' % search_key)
             if Prefs['read_json'] and manual == False:
                 info_json = self.get_info_json(media)
                 if info_json is not None and search_key in info_json:
                     search_data = info_json[search_key]
             if search_data is None:
-                Log('11111111111111111111111111111111111111111111111111111111111')
                 search_data = self.send_search(self.module_name, keyword, manual)
                 if search_data is not None and Prefs['write_json']:
                     self.save_info(media, {search_key:search_data})
