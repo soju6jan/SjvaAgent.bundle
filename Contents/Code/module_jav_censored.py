@@ -5,7 +5,6 @@ from .agent_base import AgentBase
 class ModuleJavCensoredBase(AgentBase):
     def get_search_keyword(self, media, manual, from_file=False):
         try:
-            
             if manual:
                 ret = unicodedata.normalize('NFKC', unicode(media.name)).strip()
             else:
@@ -27,6 +26,13 @@ class ModuleJavCensoredBase(AgentBase):
 
 
     def base_search(self, results, media, lang, manual, keyword):
+        if Prefs['read_json'] and manual == False:
+            info_json = self.get_info_json(media)
+            if info_json is not None:
+                meta = MetadataSearchResult(id=info_json['code'], name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
+                results.Append(meta)
+                return
+
         data = self.send_search(self.module_name, keyword, manual)
         for item in data:
             Log(item)
@@ -46,7 +52,16 @@ class ModuleJavCensoredBase(AgentBase):
 
     def base_update(self, metadata, media, lang):
         Log("UPDATE : %s" % metadata.id)
-        data = self.send_info(self.module_name, metadata.id)
+        data = None
+        if Prefs['read_json']:
+            info_json = self.get_info_json(media)
+            if info_json is not None and info_json['code'] == metadata.id:
+                data = info_json
+        if data is None:
+            data = self.send_info(self.module_name, metadata.id)
+            if data is not None and Prefs['write_json']:
+                self.save_info(media, data)
+  
         #Log(json.dumps(data, indent=4))
         metadata.title = self.change_html(data['title'])
         metadata.original_title = metadata.title_sort = data['originaltitle']

@@ -190,11 +190,88 @@ class AgentBase(object):
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
+    
+    def get_json_filepath(self, media):
+        try:
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+            Log(data)
+            if 'Media' in data['MediaContainer']['Metadata'][0]:
+                filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+                if self.module_name in ['movie']:
+                    ret = os.path.join(os.path.dirname(filename), 'info.json')
+                elif self.module_name in ['jav_censored', 'jav_censored_ama']:
+                    tmp = os.path.splitext(os.path.basename(filename))
+                    ret = os.path.join(os.path.dirname(filename), '%s.json' % tmp[0])
+            elif 'Location' in data['MediaContainer']['Metadata'][0]:
+                folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
+                ret = os.path.join(folderpath, 'info.json')
+            else:
+                ret = None
+            return ret
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
 
-    """
-    LyricFind.bundle/Contents/Code/__init__.py:      metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = 'lrc', sort_order=sort_order)
-./LyricFind.bundle/Contents/Code/__init__.py:    metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = 'txt', sort_order=sort_order)
-./LyricFind.bundle/Contents/Code/__init__.py:  # We need to recreate the Proxy objects to effectively pass them through since the Framework doesn't
-./LyricFind.bundle/Contents/Code/__init__.py:      metadata.tracks[track_key].lyrics[key] = Proxy.Remote(key, format='lrc' if '&lrc=1' in key else 'txt', sort_order=sort_order)
-^C
-    """
+    def save_info(self, media, info):
+        try:
+            ret = self.get_json_filepath(media)
+            if ret is None:
+                return
+            import io
+            with io.open(ret, 'w', encoding="utf-8") as outfile:
+                data = json.dumps(info, ensure_ascii=False, indent=4)
+                if isinstance(data, str):
+                    data = data.decode("utf-8")
+
+                outfile.write(data)
+            return True
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+        return False
+
+    
+
+    def get_info_json(self, media):
+        try:
+            filepath = self.get_json_filepath(media)
+            if filepath is None:
+                return
+            data = None
+            if os.path.exists(filepath):
+                import io
+                with io.open(filepath, 'r', encoding="utf-8") as outfile:
+                    tmp = outfile.read()
+                    #Log('1111111111')
+                    #Log(tmp)
+                    #data = json.load(outfile)
+                data = json.loads(tmp)
+            return data
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+            
+        
+    # KTV에서 사용. 있으면 추가
+    def append_info(self, media, key, info):
+        try:
+            ret = self.get_json_filepath(media)
+            if ret is None:
+                return
+            all_data = self.get_info_json(media)
+            if all_data is None:
+                all_data = {}
+            import io
+            with io.open(ret, 'w', encoding="utf-8") as outfile:
+                all_data[key] = info
+                data = json.dumps(all_data, ensure_ascii=False, indent=4)
+                data = data.decode('utf-8')
+                if isinstance(data, str):
+                    data = data.decode("utf-8")
+                outfile.write(data)
+            return True
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+        return False
+        

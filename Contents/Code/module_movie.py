@@ -7,6 +7,17 @@ class ModuleMovie(AgentBase):
     
     def search(self, results, media, lang, manual, **kwargs):
         try:
+            module_prefs = self.get_module_prefs(self.module_name)
+            if Prefs['read_json'] and manual == False:
+                info_json = self.get_info_json(media)
+                if info_json is not None:
+                    code = info_json['code']
+                    if module_prefs['include_time_info'] == 'true':
+                        code = code + '|%s' % int(time.time())
+                    meta = MetadataSearchResult(id=code, name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
+                    results.Append(meta)
+                    return
+
             movie_year = media.year
             movie_name = unicodedata.normalize('NFKC', unicode(media.name)).strip()            
             Log('name:[%s], year:[%s]', movie_name, movie_year)
@@ -21,17 +32,14 @@ class ModuleMovie(AgentBase):
             if search_data is None:
                 return 
 
-            module_prefs = self.get_module_prefs(self.module_name)
             for item in search_data:
                 meta_id = item['code']
                 if module_prefs['include_time_info'] == 'true':
                     meta_id += '|%s' % int(time.time())
-                Log(meta_id)
-                Log(meta_id)
                 meta = MetadataSearchResult(id=meta_id, name=item['title'], year=item['year'], score=item['score'], thumb=item['image_url'], lang=lang)
                 meta.summary = self.change_html(item['desc']) + self.search_result_line() + item['site']
                 meta.type = "movie"
-                results.Append(meta)
+                results.Append(meta) 
 
             #Log(json.dumps(search_data, indent=4))
         except Exception as exception: 
@@ -44,8 +52,17 @@ class ModuleMovie(AgentBase):
 
     def update(self, metadata, media, lang):
         try:
-            meta_info = self.send_info(self.module_name, metadata.id.split('|')[0])
-            #Log(json.dumps(meta_info, indent=4))
+            code = metadata.id.split('|')[0]
+            meta_info = None
+            if Prefs['read_json']:
+                info_json = self.get_info_json(media)
+                if info_json is not None and info_json['code'] == code:
+                    meta_info = info_json
+            if meta_info is None:
+                meta_info = self.send_info(self.module_name, code)
+                if meta_info is not None and Prefs['write_json']:
+                    self.save_info(media, meta_info)
+
             metadata.title = meta_info['title']
             metadata.original_title = meta_info['originaltitle']
             metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)

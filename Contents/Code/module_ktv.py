@@ -25,8 +25,22 @@ class ModuleKtv(AgentBase):
         try:
             Log('SEARCH : %s' % media.show)
             keyword = media.show
-            Log('>> %s : %s' % (self.module_name, keyword))
-            search_data = self.send_search(self.module_name, keyword, manual)
+            Log('>> %s : %s %s' % (self.module_name, keyword, manual))
+            
+            search_data = None
+            search_key = u'search|%s' % keyword
+            Log('>>>>>>>>>>>>>>>>>>111111 %s' % search_key)
+            if Prefs['read_json'] and manual == False:
+                info_json = self.get_info_json(media)
+                if info_json is not None and search_key in info_json:
+                    search_data = info_json[search_key]
+            if search_data is None:
+                Log('11111111111111111111111111111111111111111111111111111111111')
+                search_data = self.send_search(self.module_name, keyword, manual)
+                if search_data is not None and Prefs['write_json']:
+                    self.save_info(media, {search_key:search_data})
+                    #self.append_info(media, search_key, search_data)
+
             if search_data is None:
                 return
             #Log(json.dumps(search_data, indent=4))
@@ -225,14 +239,32 @@ class ModuleKtv(AgentBase):
         metadata.themes.validate_keys(valid_names)    
 
 
-    def update_episode(self, show_epi_info, episode, frequency=None):
+    def update_episode(self, show_epi_info, episode, media, info_json, frequency=None):
         try:
             valid_names = []
 
             if 'daum' in show_epi_info:
                 #if 'tving_id' in meta_info['extra_info']:
                 #    param += ('|' + 'V' + meta_info['extra_info']['tving_id'])
-                episode_info = self.send_episode_info(self.module_name, show_epi_info['daum']['code'])
+                episode_info = None
+                """
+                if Prefs['read_json']:
+                    info_json = self.get_info_json(media)
+                    if info_json is not None and show_epi_info['daum']['code'] in info_json:
+                        episode_info = info_json[show_epi_info['daum']['code']]
+                if episode_info is None:
+                    episode_info = self.send_episode_info(self.module_name, show_epi_info['daum']['code'])
+                    if episode_info is not None and Prefs['write_json']:
+                        self.append_info(media, show_epi_info['daum']['code'], episode_info)
+
+                #episode_info = self.send_episode_info(self.module_name, show_epi_info['daum']['code'])
+                """
+                if info_json is not None and show_epi_info['daum']['code'] in info_json:
+                    episode_info = info_json[show_epi_info['daum']['code']]
+                if episode_info is None:
+                    episode_info = self.send_episode_info(self.module_name, show_epi_info['daum']['code'])
+                    if episode_info is not None and Prefs['write_json']:
+                        info_json[show_epi_info['daum']['code']] = episode_info
 
                 episode.originally_available_at = Datetime.ParseDate(episode_info['premiered']).date()
                 episode.title = episode_info['title']
@@ -303,9 +335,21 @@ class ModuleKtv(AgentBase):
                         flag_media_season = True
                         break
 
-            search_data = self.send_search(self.module_name, media.title, False)        
-            # data = get_show_list(media.title)
-            # sort
+            search_data = None
+            search_key = u'search|%s' % media.title
+            info_json = {}
+            if Prefs['read_json']:
+                tmp = self.get_info_json(media)
+                #Log(tmp)
+                if tmp is not None and search_key in tmp:
+                    search_data = tmp[search_key]
+                    info_json = tmp
+            
+            if search_data is None:
+                search_data = self.send_search(self.module_name, media.title, False)
+                if search_data is not None and Prefs['write_json']:
+                    #self.append_info(media, search_key, search_data)
+                    info_json[search_key] = search_data
 
             index_list = [index for index in media.seasons]
             index_list = sorted(index_list)
@@ -324,8 +368,20 @@ class ModuleKtv(AgentBase):
                 Log('flag_media_season : %s', flag_media_season)
                 Log('search_title : %s', search_title)
                 Log('search_code : %s', search_code)
+                #self.get_json_filepath(media) 
+                #self.get_json_filepath(media.seasons[media_season_index])
 
-                meta_info = self.send_info(self.module_name, search_code, title=search_title)
+                meta_info = None
+                if info_json is not None and search_code in info_json:
+                    # 방송중이라면 저장된 정보를 무시해야 새로운 에피를 갱신
+                    if info_json[search_code]['status'] == 2:
+                        meta_info = info_json[search_code]
+                if meta_info is None:
+                    meta_info = self.send_info(self.module_name, search_code, title=search_title)
+                    if meta_info is not None and Prefs['write_json']:
+                        #self.append_info(media, search_code, meta_info)
+                        info_json[search_code] = meta_info
+  
                 #Log(json.dumps(meta_info, indent=4))
 
                 if flag_media_season:
@@ -357,12 +413,12 @@ class ModuleKtv(AgentBase):
                         episode = metadata.seasons[media_season_index].episodes[media_episode_index]
 
                         @task
-                        def UpdateEpisode(episode=episode, media_season_index=media_season_index, media_episode_index=media_episode_index):
+                        def UpdateEpisode(episode=episode, media_season_index=media_season_index, media_episode_index=media_episode_index, media=media):
                             frequency = False
                             show_epi_info = None
                             if media_episode_index in meta_info['extra_info']['episodes']:
                                 show_epi_info = meta_info['extra_info']['episodes'][media_episode_index]
-                                self.update_episode(show_epi_info, episode)
+                                self.update_episode(show_epi_info, episode, media, info_json)
                             else:
                                 #에피정보가 없다면 
                                 match = Regex(r'\d{4}-\d{2}-\d{2}').search(media_episode_index)
@@ -370,7 +426,7 @@ class ModuleKtv(AgentBase):
                                     for key, value in meta_info['extra_info']['episodes'].items():
                                         if ('daum' in value and value['daum']['premiered'] == media_episode_index) or ('tving' in value and value['tving']['premiered'] == media_episode_index) or ('wavve' in value and value['wavve']['premiered'] == media_episode_index):
                                             show_epi_info = value
-                                            self.update_episode(show_epi_info, episode, frequency=key)
+                                            self.update_episode(show_epi_info, episode, media, info_json, frequency=key)
                                             break
                             if show_epi_info is None:
                                 return
@@ -390,6 +446,9 @@ class ModuleKtv(AgentBase):
                                 meta.photo = item['thumb']
     
             # 시즌 title, summary
+            if Prefs['write_json']:
+                self.save_info(media, info_json)
+
             if not flag_media_season:
                 return
             url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
@@ -418,11 +477,11 @@ class ModuleKtv(AgentBase):
                     url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[media_season_index].id, urllib.quote(season_title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
                 request = PutRequest(url)
                 response = urllib2.urlopen(request)
-
-
+     
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
+        
 
 
 
