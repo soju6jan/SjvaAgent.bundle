@@ -16,5 +16,17 @@
 		"label": "URL 요청 timeout",
 		"type": "text",
 		"default": "3000"
+	},
+	{
+		"id": "read_json",
+		"label": "JSON 파일이 있으면 사용",
+		"type": "bool",
+		"default": true
+	},
+	{
+		"id": "write_json",
+		"label": "메타 데이터 JSON으로 저장",
+		"type": "bool",
+		"default": false
 	}
 ]
