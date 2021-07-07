@@ -27,12 +27,14 @@ class ModuleKtv(AgentBase):
             keyword = media.show
             Log('>> %s : %s %s' % (self.module_name, keyword, manual))
             
+            use_json = False
             search_data = None
             search_key = u'search|%s' % keyword
             if Prefs['read_json'] and manual == False:
                 info_json = self.get_info_json(media)
                 if info_json is not None and search_key in info_json:
                     search_data = info_json[search_key]
+                    use_json = True
             if search_data is None:
                 search_data = self.send_search(self.module_name, keyword, manual)
                 if search_data is not None and Prefs['write_json']:
@@ -42,6 +44,9 @@ class ModuleKtv(AgentBase):
             if search_data is None:
                 return
             #Log(json.dumps(search_data, indent=4))
+            # 2021-07-07
+            # 다음 차단-> 차단상태에서 ott search data 저장 -> 점수 미달 -> 새로고침 안됨
+            max_score = 0
             daum_max_score = 100
             equal_max_score = 100
             if 'daum' in search_data:
@@ -77,6 +82,7 @@ class ModuleKtv(AgentBase):
                                 score = 20
                             if 'status' in series and series['status'] == 0:
                                 score = score -40
+                            max_score = max(max_score, score)
                             results.Append(MetadataSearchResult(id=series['code'], name=series['title'], year=series['year'], score=score, lang=lang))
                 # 미디어 단일, 메타 단일 or 미디어 시즌, 메타 단일
                 else:
@@ -102,24 +108,37 @@ class ModuleKtv(AgentBase):
                     tmp = tmp + self.search_result_line() + data['desc']
                     meta.summary = tmp
                     meta.type = 'movie'
+                    max_score = max(max_score, score)
                     results.Append(meta)
 
                 if 'equal_name' in data:
                     for index, program in enumerate(data['equal_name']):
                         if program['year'] == media.year:
-                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=min(equal_max_score, 100 - (index)), lang=lang))
+                            score = min(equal_max_score, 100 - (index))
+                            max_score = max(max_score, score)
+                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=score, lang=lang))
                         else:
-                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=min(equal_max_score, 80 - (index*5)), lang=lang))
+                            score = min(equal_max_score, 80 - (index*5))
+                            max_score = max(max_score, score)
+                            results.Append(MetadataSearchResult(id=program['code'], name='%s | %s' % (program['title'], program['studio']), year=program['year'], score=score, lang=lang))
             def func(show_list):
                 for idx, item in enumerate(show_list):
-                    meta = MetadataSearchResult(id=item['code'], name=item['title'], score=min(daum_max_score, item['score']), thumb=item['image_url'], lang=lang)
+                    score = min(daum_max_score, item['score'])
+                    meta = MetadataSearchResult(id=item['code'], name=item['title'], score=score, thumb=item['image_url'], lang=lang)
                     meta.summary = item['site'] + ' ' + item['studio']
                     meta.type = "movie"
                     results.Append(meta)
+                    return score
             if 'tving' in search_data:
-                func(search_data['tving'])
+                score = func(search_data['tving'])
+                max_score = max(max_score, score)
             if 'wavve' in search_data:
-                func(search_data['wavve'])
+                score = func(search_data['wavve'])
+                max_score = max(max_score, score)
+            if use_json and max_score < 85:
+                self.remove_info(media)
+                self.search(results, media, lang, manual)
+
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())

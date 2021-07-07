@@ -194,7 +194,7 @@ class AgentBase(object):
     def get_json_filepath(self, media):
         try:
             data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
-            Log(data)
+            #Log(data)
             if 'Media' in data['MediaContainer']['Metadata'][0]:
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
                 if self.module_name in ['movie']:
@@ -274,4 +274,15 @@ class AgentBase(object):
             Log('Exception:%s', e)
             Log(traceback.format_exc())
         return False
+    
+
+    def remove_info(self, media):
+        try:
+            ret = self.get_json_filepath(media)
+            os.remove(ret)
+            import time
+            time.sleep(2)
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
         
