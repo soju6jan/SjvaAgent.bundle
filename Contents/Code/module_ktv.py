@@ -379,8 +379,11 @@ class ModuleKtv(AgentBase):
                 search_title = search_title.split('|')[0]
                 search_code = metadata.id            
                 if flag_media_season and 'daum' in search_data and len(search_data['daum']['series']) > 1:
-                    search_title = search_data['daum']['series'][int(media_season_index)-1]['title']
-                    search_code = search_data['daum']['series'][int(media_season_index)-1]['code']
+                    try: #사당보다 먼 의정부보다 가까운 3
+                        search_title = search_data['daum']['series'][int(media_season_index)-1]['title']
+                        search_code = search_data['daum']['series'][int(media_season_index)-1]['code']
+                    except:
+                        pass
 
                 Log('flag_media_season : %s', flag_media_season)
                 Log('search_title : %s', search_title)
