@@ -9,7 +9,7 @@ import time, json, traceback, io
 
 episode_regexps = [
     r'\.([sS](?P<season>[0-9]{1,2}))?[eE](?P<ep>[0-9]{1,4})',
-    r'(?P<ep>[0-9]{1,4})[%s]' % u'회화',
+    r'(?P<ep>\d{1,4})[회화]',
 ]
 
 date_regexps = [
@@ -21,7 +21,7 @@ try:
     import logging
     import logging.handlers
     logger = logging.getLogger('sjva_scanner')
-    logger.setLevel(logging.DEBUG) 
+    logger.setLevel(logging.ERROR) 
     formatter = logging.Formatter(u'[%(asctime)s|%(levelname)s] : %(message)s')
     #file_max_bytes = 10 * 1024 * 1024 
     filename = os.path.join(os.path.dirname( os.path.abspath( __file__ ) ), '../../', 'Logs', 'sjva.scanner.korea.tv.log')
@@ -69,7 +69,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 match = re.search(rx, file, re.IGNORECASE)
                 if match:
                     # 파일명에 시즌 번호가 있다면 파일명 우선
-                    if match.group('season') is not None:
+                    if 'season' in match.groupdict() and match.group('season') is not None:
                         season = int(match.group('season'))
                     else:
                         #파일명에 시즌표시가 없다.
