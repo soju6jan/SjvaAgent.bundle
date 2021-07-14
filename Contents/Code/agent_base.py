@@ -277,10 +277,15 @@ class AgentBase(object):
     def remove_info(self, media):
         try:
             ret = self.get_json_filepath(media)
-            if ret is not None and os.path.exists(ret):
+            # 구드공인 경우 캐시때문에 exists 함수 실패하는 것 같음.
+            if ret is not None: #and os.path.exists(ret):
                 os.remove(ret)
-                time.sleep(2)
-        except Exception as e: 
-            Log('Exception:%s', e)
+                #time.sleep(2)
+        except Exception as e:
+            try: 
+                os.system('rm %s' % ret)
+            except:
+                pass
+            #Log('Exception:%s', e)
             #Log(traceback.format_exc())
         
