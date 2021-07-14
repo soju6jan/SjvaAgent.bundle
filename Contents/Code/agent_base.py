@@ -277,7 +277,7 @@ class AgentBase(object):
     def remove_info(self, media):
         try:
             ret = self.get_json_filepath(media)
-            if ret is None and os.path.exists(ret):
+            if ret is not None and os.path.exists(ret):
                 os.remove(ret)
                 time.sleep(2)
         except Exception as e: 
