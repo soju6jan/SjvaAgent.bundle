@@ -8,15 +8,20 @@ class ModuleMovie(AgentBase):
     def search(self, results, media, lang, manual, **kwargs):
         try:
             module_prefs = self.get_module_prefs(self.module_name)
-            if Prefs['read_json'] and manual == False:
-                info_json = self.get_info_json(media)
-                if info_json is not None:
-                    code = info_json['code']
-                    if module_prefs['include_time_info'] == 'true':
-                        code = code + '|%s' % int(time.time())
-                    meta = MetadataSearchResult(id=code, name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
-                    results.Append(meta)
-                    return
+            if Prefs['read_json']:
+                if manual:
+                    Log('info.json remove')
+                    self.remove_info(media)
+                else:
+                    info_json = self.get_info_json(media)
+                    if info_json is not None:
+                        code = info_json['code']
+                        if module_prefs['include_time_info'] == 'true':
+                            code = code + '|%s' % int(time.time())
+                        #code = code + ('^1' if manual else '^0')
+                        meta = MetadataSearchResult(id=code, name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
+                        results.Append(meta)
+                        return
 
             movie_year = media.year
             movie_name = unicodedata.normalize('NFKC', unicode(media.name)).strip()            
@@ -35,12 +40,14 @@ class ModuleMovie(AgentBase):
             for item in search_data:
                 meta_id = item['code']
                 if module_prefs['include_time_info'] == 'true':
-                    meta_id += '|%s' % int(time.time())
+                    meta_id = meta_id + '|%s' % int(time.time())
+                #meta_id = meta_id + ('^1' if manual else '^0')
                 meta = MetadataSearchResult(id=meta_id, name=item['title'], year=item['year'], score=item['score'], thumb=item['image_url'], lang=lang)
                 meta.summary = self.change_html(item['desc']) + self.search_result_line() + item['site']
                 meta.type = "movie"
                 results.Append(meta) 
 
+            # info_json에 다른 코드가 있으면 삭제
             #Log(json.dumps(search_data, indent=4))
         except Exception as exception: 
             Log('Exception:%s', exception)
@@ -50,14 +57,29 @@ class ModuleMovie(AgentBase):
     #audience_rating_image_identifiers = {'Upright' : 'rottentomatoes://image.rating.upright', 'Spilled' : 'rottentomatoes://image.rating.spilled', None : ''}
     #'imdb://image.rating'
 
+    # 스캔 : manual = False, 일치항목찾기, 메타새로고침
+    # 3가지 경우 진입
+    # 스캔, 메타새로고침 : info가 있으면 무조건 강제로 사용
+    # 일치항목찾기 : code가 같을 경우에만 사용.
+    # 이를 구분하는 방법 : search manual 값을 여기로 전달해야함. 
+    # 구분자 ^ 
+    # ^ 값이 없으면 메타새로고침
+    # ^0 : 스캔 (manual = false)
+    # ^1 : 일치항목찾기 (manual = true)
+    # metadata id set은 search만 가능
+    # 어떤 방식으로 서치했는지 update단에는 아는 방법을 찾지 못함
+    # 일치항목찾기인 경우 info.json 삭제
+    # 구드공의 경우 삭제 불가능하기때문에 변경방법 없음. read_json을 끄고 입힌 후 다시 on
     def update(self, metadata, media, lang):
         try:
             code = metadata.id.split('|')[0]
             meta_info = None
+
             if Prefs['read_json']:
                 info_json = self.get_info_json(media)
-                if info_json is not None and info_json['code'] == code:
+                if info_json is not None:
                     meta_info = info_json
+            
             if meta_info is None:
                 meta_info = self.send_info(self.module_name, code)
                 if meta_info is not None and Prefs['write_json']:

@@ -193,7 +193,7 @@ class AgentBase(object):
     
     def get_json_filepath(self, media):
         try:
-            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % media.id)
             #Log(data)
             if 'Media' in data['MediaContainer']['Metadata'][0]:
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
@@ -207,6 +207,7 @@ class AgentBase(object):
                 ret = os.path.join(folderpath, 'info.json')
             else:
                 ret = None
+            #Log(ret)
             return ret
         except Exception as e: 
             Log('Exception:%s', e)
@@ -242,9 +243,6 @@ class AgentBase(object):
                 import io
                 with io.open(filepath, 'r', encoding="utf-8") as outfile:
                     tmp = outfile.read()
-                    #Log('1111111111')
-                    #Log(tmp)
-                    #data = json.load(outfile)
                 data = json.loads(tmp)
             return data
         except Exception as e: 
@@ -279,10 +277,10 @@ class AgentBase(object):
     def remove_info(self, media):
         try:
             ret = self.get_json_filepath(media)
-            os.remove(ret)
-            import time
-            time.sleep(2)
+            if ret is None and os.path.exists(ret):
+                os.remove(ret)
+                time.sleep(2)
         except Exception as e: 
             Log('Exception:%s', e)
-            Log(traceback.format_exc())
+            #Log(traceback.format_exc())
         
