@@ -102,7 +102,10 @@ class ModuleMovie(AgentBase):
             try: 
                 metadata.originally_available_at = Datetime.ParseDate(meta_info['premiered']).date()
                 metadata.year = meta_info['year']
-            except: pass
+            except: 
+                try: metadata.year = meta_info['year']
+                except: pass
+
             
             metadata.content_rating = meta_info['mpaa']
             metadata.summary = meta_info['plot']
