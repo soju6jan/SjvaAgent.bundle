@@ -10,11 +10,5 @@
 		"label": "모듈 전용 SJVA APIKEY. APIKEY 사용시만 입력 (미입력시 SjvaAgent 설정 값 사용)",
 		"type": "text",
 		"default": ""
-	},
-	{
-		"id": "include_time_info",
-		"label": "영화 재생 버전을 분리하여 추가.",
-		"type": "bool",
-		"default": "False"
 	}
 ]

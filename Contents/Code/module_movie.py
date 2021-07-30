@@ -7,16 +7,23 @@ class ModuleMovie(AgentBase):
     
     def search(self, results, media, lang, manual, **kwargs):
         try:
-            module_prefs = self.get_module_prefs(self.module_name)
-            if Prefs['read_json']:
+            if manual and (media.name.startswith('MD') or media.name.startswith('MT') or media.name.startswith('MN')):
+                code = media.name
+                if self.is_include_time_info(media):
+                    code = code + '|%s' % int(time.time())
+                meta = MetadataSearchResult(id=code, name=code, year=1900, score=100, thumb="", lang=lang)
+                results.Append(meta)
+                return
+
+
+            if self.is_read_json(media):
                 if manual:
-                    Log('info.json remove')
                     self.remove_info(media)
                 else:
                     info_json = self.get_info_json(media)
                     if info_json is not None:
                         code = info_json['code']
-                        if module_prefs['include_time_info'] == 'true':
+                        if self.is_include_time_info(media):
                             code = code + '|%s' % int(time.time())
                         #code = code + ('^1' if manual else '^0')
                         meta = MetadataSearchResult(id=code, name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
@@ -39,7 +46,7 @@ class ModuleMovie(AgentBase):
 
             for item in search_data:
                 meta_id = item['code']
-                if module_prefs['include_time_info'] == 'true':
+                if self.is_include_time_info(media):
                     meta_id = meta_id + '|%s' % int(time.time())
                 #meta_id = meta_id + ('^1' if manual else '^0')
                 meta = MetadataSearchResult(id=meta_id, name=item['title'], year=item['year'], score=item['score'], thumb=item['image_url'], lang=lang)
@@ -70,19 +77,22 @@ class ModuleMovie(AgentBase):
     # 어떤 방식으로 서치했는지 update단에는 아는 방법을 찾지 못함
     # 일치항목찾기인 경우 info.json 삭제
     # 구드공의 경우 삭제 불가능하기때문에 변경방법 없음. read_json을 끄고 입힌 후 다시 on
+
+    # 2021-07-29
+    # MN으로 저장되어 있고, info.json을 MD로 수정했다하더라도 MD로 내용은 바뀌지만,
+    # GUID를 MD로 변경할 수는 없다. 일반적으로는 문제되지 않겠지만.......
     def update(self, metadata, media, lang):
         try:
             code = metadata.id.split('|')[0]
             meta_info = None
 
-            if Prefs['read_json']:
+            if self.is_read_json(media):
                 info_json = self.get_info_json(media)
                 if info_json is not None:
                     meta_info = info_json
-            
             if meta_info is None:
                 meta_info = self.send_info(self.module_name, code)
-                if meta_info is not None and Prefs['write_json']:
+                if meta_info is not None and self.is_write_json(media):
                     self.save_info(media, meta_info)
 
             metadata.title = meta_info['title']
@@ -153,25 +163,25 @@ class ModuleMovie(AgentBase):
             art_list = []
             for item in sorted(meta_info['art'], key=lambda k: k['score'], reverse=True):
                 valid_names.append(item['value'])
-                if item['aspect'] == 'poster':
+                if item['aspect'] == 'poster' and poster_index < 3:
                     if item['thumb'] == '':
                         metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
                     else:
                         metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
                     poster_index = poster_index + 1
-                elif item['aspect'] == 'landscape':
+                elif item['aspect'] == 'landscape' and art_index < 3:
                     art_list.append(item['value'])
                     if item['thumb'] == '':
                         metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
                     else:
                         metadata.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
                     art_index = art_index + 1
-                elif item['aspect'] == 'banner':
-                    if item['thumb'] == '':
-                        metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
-                    else:
-                        metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1)
-                    banner_index = banner_index + 1
+                #elif item['aspect'] == 'banner' and banner_index < 0:
+                #    if item['thumb'] == '':
+                #        metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
+                #    else:
+                #        metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1)
+                #    banner_index = banner_index + 1
             
             #metadata.posters.validate_keys(valid_names)
             #metadata.art.validate_keys(valid_names) 

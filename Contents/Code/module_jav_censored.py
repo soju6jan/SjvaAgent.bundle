@@ -26,7 +26,7 @@ class ModuleJavCensoredBase(AgentBase):
 
 
     def base_search(self, results, media, lang, manual, keyword):
-        if Prefs['read_json'] and manual == False:
+        if self.is_read_json(media) and manual == False:
             info_json = self.get_info_json(media)
             if info_json is not None:
                 meta = MetadataSearchResult(id=info_json['code'], name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
@@ -53,13 +53,13 @@ class ModuleJavCensoredBase(AgentBase):
     def base_update(self, metadata, media, lang):
         Log("UPDATE : %s" % metadata.id)
         data = None
-        if Prefs['read_json']:
+        if self.is_read_json(media):
             info_json = self.get_info_json(media)
             if info_json is not None and info_json['code'] == metadata.id:
                 data = info_json
         if data is None:
             data = self.send_info(self.module_name, metadata.id)
-            if data is not None and Prefs['write_json']:
+            if data is not None and self.is_write_json(media):
                 self.save_info(media, data)
   
         #Log(json.dumps(data, indent=4))

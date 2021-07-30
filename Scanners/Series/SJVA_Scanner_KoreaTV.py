@@ -90,7 +90,14 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     match = re.search(rx, file)
                     if match:
                         year = match.group('year')
-                        year = int(year) + 2000 if len(year) == 2 else int(year)
+                        if len(year) == 2:
+                            year = int(year)
+                            if int(year) < 30:
+                                year = year + 2000
+                            else:
+                                year = year + 1900
+                        else:
+                            year = int(year)
                         month = int(match.group('month'))
                         day = int(match.group('day'))
                         tmp = '%d-%02d-%02d' % (year, month, day)

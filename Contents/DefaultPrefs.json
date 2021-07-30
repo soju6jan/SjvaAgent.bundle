@@ -18,15 +18,21 @@
 		"default": "3000"
 	},
 	{
+		"id": "include_time_info",
+		"label": "영화 재생 버전을 분리하여 추가할 섹션 ID 목록 (all이면 모두. 구분자 ,)",
+		"type": "text",
+		"default": ""
+	},
+	{
 		"id": "read_json",
-		"label": "JSON 파일이 있으면 사용",
-		"type": "bool",
-		"default": true
+		"label": "JSON 파일이 있으면 사용할 섹션 ID 목록 (all이면 모두. 구분자 ,)",
+		"type": "text",
+		"default": "all"
 	},
 	{
 		"id": "write_json",
-		"label": "메타 데이터 JSON으로 저장",
-		"type": "bool",
-		"default": false
+		"label": "메타 데이터를 JSON으로 저장헐 섹션 ID 목록 (all이면 모두. 구분자 ,)",
+		"type": "text",
+		"default": ""
 	}
 ]
