@@ -26,16 +26,18 @@ class ModuleJavCensoredBase(AgentBase):
 
 
     def base_search(self, results, media, lang, manual, keyword):
-        if self.is_read_json(media) and manual == False:
-            info_json = self.get_info_json(media)
-            if info_json is not None:
-                meta = MetadataSearchResult(id=info_json['code'], name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
-                results.Append(meta)
-                return
+        if self.is_read_json(media):
+            if manual:
+                self.remove_info(media)
+            else:
+                info_json = self.get_info_json(media)
+                if info_json is not None:
+                    meta = MetadataSearchResult(id=info_json['code'], name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
+                    results.Append(meta)
+                    return
 
         data = self.send_search(self.module_name, keyword, manual)
         for item in data:
-            Log(item)
             #title = '[%s]%s' % (item['ui_code'], String.DecodeHTMLEntities(String.StripTags(item['title_ko'])).strip())
             if item['year'] != '' and item['year'] is not None:
                 title = '{} / {} / {}'.format(item['ui_code'], item['year'], item['site'])
@@ -71,7 +73,6 @@ class ModuleJavCensoredBase(AgentBase):
         except: pass
         metadata.studio = data['studio']
         metadata.summary = self.change_html(data['plot'])
-        Log(data['premiered'])
         if 'premiered' in data and data['premiered'] is not None and len(data['premiered']) == 10 and data['premiered'] != '0000-00-00':
             metadata.originally_available_at = Datetime.ParseDate(data['premiered']).date()
         metadata.countries = data['country']
