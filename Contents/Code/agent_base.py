@@ -18,7 +18,7 @@ class AgentBase(object):
         'com.plexapp.agents.sjva_agent_jav_censored_ama' : 'D',     # D : censored ama
         # E : uncensored 
         # W : western
-        # G : fc2
+        'com.plexapp.agents.sjva_agent_jav_fc2' : 'L',              # L : fc2
         'com.plexapp.agents.sjva_agent_ktv' : 'K',                  # K : 국내TV
         'com.plexapp.agents.sjva_agent_ftv' : 'F',                  # F : 외국TV
         # F : FTV
@@ -61,8 +61,15 @@ class AgentBase(object):
     def send_search(self, module_name, keyword, manual, year=''):
         try:
             module_prefs = self.get_module_prefs(module_name)
-            url = '{ddns}/metadata/api/{module_name}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}'.format(
+            if module_name == 'jav_fc2':
+                sjva_mod_url = '/mod/api/fc2metadata'.format(module_name=module_name)
+            else:
+                sjva_mod_url = '/metadata/api/{module_name}'.format(module_name=module_name)
+
+            #url = '{ddns}/metadata/api/{module_name}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}'.format(
+            url = '{ddns}{sjva_mod_url}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}'.format(
               ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
+              sjva_mod_url=sjva_mod_url,
               module_name=module_name,
               keyword=urllib.quote(keyword.encode('utf8')),
               manual=manual,
@@ -79,8 +86,15 @@ class AgentBase(object):
     def send_info(self, module_name, code, title=None):
         try:
             module_prefs = self.get_module_prefs(module_name)
-            url = '{ddns}/metadata/api/{module_name}/info?code={code}&call=plex&apikey={apikey}'.format(
+            if module_name == 'jav_fc2':
+                sjva_mod_url = '/mod/api/fc2metadata'.format(module_name=module_name)
+            else:
+                sjva_mod_url = '/metadata/api/{module_name}'.format(module_name=module_name)
+
+            #url = '{ddns}/metadata/api/{module_name}/info?code={code}&call=plex&apikey={apikey}'.format(
+            url = '{ddns}{sjva_mod_url}/info?code={code}&call=plex&apikey={apikey}'.format(
               ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
+              sjva_mod_url=sjva_mod_url,
               module_name=module_name,
               code=urllib.quote(code.encode('utf8')),
               apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey']
@@ -200,7 +214,7 @@ class AgentBase(object):
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
                 if self.module_name in ['movie']:
                     ret = os.path.join(os.path.dirname(filename), 'info.json')
-                elif self.module_name in ['jav_censored', 'jav_censored_ama']:
+                elif self.module_name in ['jav_censored', 'jav_censored_ama', 'jav_fc2']:
                     section_id_list = []
                     if Prefs['filename_json'] is not None:
                         section_id_list = Prefs['filename_json'].split(',')

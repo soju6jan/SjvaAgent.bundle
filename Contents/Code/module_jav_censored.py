@@ -129,7 +129,7 @@ class ModuleJavCensoredBase(AgentBase):
                 actor.name = item['name']
                 actor.photo = item['thumb']
 
-        if data['extras'] is not None:
+        if 'extra' in data and data['extras'] is not None:
             for item in data['extras']:
                 if item['mode'] == 'mp4':
                     url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
@@ -166,3 +166,13 @@ class ModuleJavCensoredAma(ModuleJavCensoredBase):
         self.base_update(metadata, media, lang)
 
 
+class ModuleJavFc2(ModuleJavCensoredBase):
+    module_name = 'jav_fc2'
+    
+    def search(self, results, media, lang, manual):
+        keyword = self.get_search_keyword(media, manual, from_file=True)
+        keyword = keyword.replace(' ', '-')
+        self.base_search(results, media, lang, manual, keyword)
+
+    def update(self, metadata, media, lang):
+        self.base_update(metadata, media, lang)

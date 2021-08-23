@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, traceback, json, urllib, re, unicodedata
 from .agent_base import AgentBase
-from .module_jav_censored import ModuleJavCensoredDvd, ModuleJavCensoredAma
+from .module_jav_censored import ModuleJavCensoredDvd, ModuleJavCensoredAma, ModuleJavFc2
 from .module_ott_show import ModuleOttShow
 from .module_movie import ModuleMovie
 
@@ -17,6 +17,7 @@ class AgentMovie(Agent.Movies):
     instance_list = { 
         'C' : ModuleJavCensoredDvd(), 
         'D' : ModuleJavCensoredAma(), 
+        'L' : ModuleJavFc2(), 
         'P' : ModuleOttShow(),
         'M' : ModuleMovie(), 
     }
