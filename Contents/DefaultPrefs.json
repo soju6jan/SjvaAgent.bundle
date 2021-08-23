@@ -34,5 +34,11 @@
 		"label": "메타 데이터를 JSON으로 저장헐 섹션 ID 목록 (all이면 모두. 구분자 ,)",
 		"type": "text",
 		"default": ""
+	},
+	{
+		"id": "filename_json",
+		"label": "JavCensored : 한 폴더에 여러 품번이 있는 섹션 ID 목록. (이 경우 필요시 파일명.json 사용)",
+		"type": "text",
+		"default": ""
 	}
 ]

@@ -194,14 +194,21 @@ class AgentBase(object):
     def get_json_filepath(self, media):
         try:
             data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % media.id)
+            section_id = str(data['MediaContainer']['librarySectionID'])
             #Log(data)
             if 'Media' in data['MediaContainer']['Metadata'][0]:
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
                 if self.module_name in ['movie']:
                     ret = os.path.join(os.path.dirname(filename), 'info.json')
                 elif self.module_name in ['jav_censored', 'jav_censored_ama']:
-                    tmp = os.path.splitext(os.path.basename(filename))
-                    ret = os.path.join(os.path.dirname(filename), '%s.json' % tmp[0])
+                    section_id_list = []
+                    if Prefs['filename_json'] is not None:
+                        section_id_list = Prefs['filename_json'].split(',')
+                    if section_id in section_id_list:
+                        tmp = os.path.splitext(os.path.basename(filename))
+                        ret = os.path.join(os.path.dirname(filename), '%s.json' % tmp[0])
+                    else:
+                        ret = os.path.join(os.path.dirname(filename), 'info.json')
             elif 'Location' in data['MediaContainer']['Metadata'][0]:
                 folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
                 ret = os.path.join(folderpath, 'info.json')
@@ -212,6 +219,7 @@ class AgentBase(object):
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
+
 
     def save_info(self, media, info):
         try:
@@ -328,3 +336,4 @@ class AgentBase(object):
             Log('Exception:%s', e)
             Log(traceback.format_exc())
         return False
+    
