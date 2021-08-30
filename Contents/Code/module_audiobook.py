@@ -73,15 +73,16 @@ class ModuleAudiobookAlbum(AgentBase):
             data = self.send_info(self.module_name, code)
             if data is not None and self.is_write_json(media):
                 self.save_info(media, data)
-
+        Log(self.d(data))
         #data = self.send_info(self.module_name, code)
         metadata.title = data['title']
         metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
         metadata.summary = data['desc']
         metadata.posters[data['poster']] = Proxy.Preview(HTTP.Request(data['poster']))
         metadata.rating = float(data['ratings'])
-        metadata.studio = data['publisher']
-        metadata.originally_available_at = Datetime.ParseDate(data['premiered']).date()
+        metadata.studio = data.get('publisher', '')
+        if 'premiered' in data:
+            metadata.originally_available_at = Datetime.ParseDate(data['premiered']).date()
         
         valid_track_keys = []
         for index in media.tracks:
@@ -90,5 +91,5 @@ class ModuleAudiobookAlbum(AgentBase):
             valid_track_keys.append(track_key)
             t = metadata.tracks[track_key]
             t.title = filename.strip(' -._')
-            t.original_title = data['author']
+            t.original_title = data.get('author', '')
         metadata.tracks.validate_keys(valid_track_keys)

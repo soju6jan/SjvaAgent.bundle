@@ -67,7 +67,7 @@ class ModuleAudiobookJsonAlbum(AgentBase):
             Log(media.tracks[index].index)
             t = metadata.tracks[track_key]
             track = str(media.tracks[index].index)
-            if track in data['album']['tracks']:
+            if 'tracks' in data['album'] and track in data['album']['tracks']:
                 t.title = data['album']['tracks'][track]['title']
                 #if 'artist' in data['album']['tracks'][track]:
                 #    t.original_title = ' '.join(data['album']['tracks'][track]['artist'])
