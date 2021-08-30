@@ -26,8 +26,9 @@ folder_regex = [
 ]
 
 file_regex = [
-    r'^(?P<track>\d{1,3})[\s\.]',
+    r'^제?(?P<track>\d{1,3})[\s\.]',
     r'(?P<track>\d{1,3})(회|화|강)',
+    r'\((?P<track>\d{1,3})\)',
     #r'(?P<track>\d{1,3})',
 ]
 
@@ -56,14 +57,18 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             filename = os.path.basename(filepath)
             track = -1
             for regex in file_regex:
-                #logger.debug(regex)
                 match = re.search(regex, filename)
                 if match:
                     track = int(match.group('track'))
                     break
             if track == -1:
-                logger.error("트랙번호찾기 실패 : %s", filename)
-                continue
+                tmp = re.finditer(r'(?P<track>\d{1,3})', os.path.splitext(filename)[0])
+                for m in tmp:
+                    track = int(m.group())
+            if track == -1:
+                track = 1
+               
+            logger.debug("트랙번호 : %s - %s", track, filename)
             title = os.path.splitext(filename)[0].strip(' -._')
             t = Media.Track(cleanPass(artist), cleanPass(album), cleanPass(title), track, disc=1, album_artist=cleanPass(album_artist), guid=None, album_guid=None)
             t.parts.append(filepath)
