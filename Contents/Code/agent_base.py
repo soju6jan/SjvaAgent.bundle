@@ -27,6 +27,8 @@ class AgentBase(object):
         'com.plexapp.agents.sjva_agent_movie' : 'M',                # M : 영화
         'com.plexapp.agents.sjva_agent_music' : 'V',                # V : 앨범, 아티스트 
         # 오디오북?
+        'com.plexapp.agents.sjva_agent_audiobook' : 'B',            # B : 오디오북
+        'com.plexapp.agents.sjva_agent_audiobook_json' : 'J',       # Y : 오디오북 yaml
     }
 
     extra_map = {
@@ -209,7 +211,15 @@ class AgentBase(object):
         try:
             data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % media.id)
             section_id = str(data['MediaContainer']['librarySectionID'])
-            #Log(data)
+            Log('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
+            Log(self.d(data))
+            if data['MediaContainer']['Metadata'][0]['type'] == 'album':
+                data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
+                #Log(self.d(data))
+            elif data['MediaContainer']['Metadata'][0]['type'] == 'artist':
+                data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % data['MediaContainer']['Metadata'][0]['Children']['Metadata'][0]['ratingKey'])
+
+
             if 'Media' in data['MediaContainer']['Metadata'][0]:
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
                 if self.module_name in ['movie']:
@@ -223,12 +233,15 @@ class AgentBase(object):
                         ret = os.path.join(os.path.dirname(filename), '%s.json' % tmp[0])
                     else:
                         ret = os.path.join(os.path.dirname(filename), 'info.json')
+                elif self.module_name in ['book', 'book_json']:
+                    ret = os.path.join(os.path.dirname(filename), 'info.json')
+                    
             elif 'Location' in data['MediaContainer']['Metadata'][0]:
                 folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
                 ret = os.path.join(folderpath, 'info.json')
             else:
                 ret = None
-            #Log(ret)
+            Log('info.json 위치 : %s' % ret)
             return ret
         except Exception as e: 
             Log('Exception:%s', e)
@@ -260,17 +273,21 @@ class AgentBase(object):
             filepath = self.get_json_filepath(media)
             if filepath is None:
                 return
-            data = None
-            if os.path.exists(filepath):
-                import io
-                with io.open(filepath, 'r', encoding="utf-8") as outfile:
-                    tmp = outfile.read()
-                data = json.loads(tmp)
-            return data
+            return self.read_json(filepath)
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
-            
+
+
+    def read_json(self, filepath):
+        data = None
+        if os.path.exists(filepath):
+            import io
+            with io.open(filepath, 'r', encoding="utf-8") as outfile:
+                tmp = outfile.read()
+            data = json.loads(tmp)
+        return data
+
         
     # KTV에서 사용. 있으면 추가
     def append_info(self, media, key, info):
@@ -351,3 +368,5 @@ class AgentBase(object):
             Log(traceback.format_exc())
         return False
     
+    def d(self, data):
+        return json.dumps(data, indent=4, ensure_ascii=False)
