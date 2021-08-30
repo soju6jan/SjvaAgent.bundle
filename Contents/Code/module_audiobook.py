@@ -44,7 +44,7 @@ class ModuleAudiobookAlbum(AgentBase):
                 info_json = self.get_info_json(media)
                 if info_json is not None:
                     code = info_json['code']
-                    meta = MetadataSearchResult(id=code, name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
+                    meta = MetadataSearchResult(id=code, name=info_json['title'], year='', score=100, thumb="", lang=lang)
                     results.Append(meta)
                     return
 

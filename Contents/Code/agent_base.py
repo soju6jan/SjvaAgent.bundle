@@ -211,8 +211,8 @@ class AgentBase(object):
         try:
             data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % media.id)
             section_id = str(data['MediaContainer']['librarySectionID'])
-            Log('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
-            Log(self.d(data))
+            #Log('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
+            #Log(self.d(data))
             if data['MediaContainer']['Metadata'][0]['type'] == 'album':
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
                 #Log(self.d(data))
