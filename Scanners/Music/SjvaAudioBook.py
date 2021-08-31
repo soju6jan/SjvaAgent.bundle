@@ -26,7 +26,7 @@ folder_regex = [
 ]
 
 file_regex = [
-    r'^제?(?P<track>\d{1,3})[\s\.]',
+    r'^(?P<track>\d{1,3})',
     r'(?P<track>\d{1,3})(회|화|강)',
     r'\((?P<track>\d{1,3})\)',
     #r'(?P<track>\d{1,3})',
@@ -60,6 +60,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 match = re.search(regex, filename)
                 if match:
                     track = int(match.group('track'))
+                    logger.debug(regex)
                     break
             if track == -1:
                 tmp = re.finditer(r'(?P<track>\d{1,3})', os.path.splitext(filename)[0])

@@ -230,7 +230,8 @@ class AgentBase(object):
                         section_id_list = Prefs['filename_json'].split(',')
                     if section_id in section_id_list:
                         tmp = os.path.splitext(os.path.basename(filename))
-                        ret = os.path.join(os.path.dirname(filename), '%s.json' % tmp[0])
+                        code = tmp[0].split(' ')[0]
+                        ret = os.path.join(os.path.dirname(filename), '%s.json' % code)
                     else:
                         ret = os.path.join(os.path.dirname(filename), 'info.json')
                 elif self.module_name in ['book', 'book_json']:

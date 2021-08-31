@@ -22,11 +22,31 @@ class ModuleAudiobookArtist(AgentBase):
 
 
     def update(self, metadata, media, lang):
-        data = self.send_info(self.module_name, metadata.id)
-        metadata.summary = data['author_intro']
-        metadata.posters[data['poster']] = Proxy.Preview(HTTP.Request(data['poster']))
+        # 수동 일치항목 찾기로 변경할 수가 없다.
+        # 앨범에 있는 json 을 지우자니 앨범 데이터가 문제고..
+        # 작가가 없는 경우 새로 입힐 방법이 없음
+        code = metadata.id
+        """
+        if self.is_read_json(media):
+            info_json = self.get_info_json(media)
+            if info_json is not None:
+                data = info_json
+        if data is None:
+            data = self.send_info(self.module_name, code)
+            #if data is not None and self.is_write_json(media):
+            #    self.save_info(media, data)
+        """
+        data = self.send_info(self.module_name, code)
+        #Log(self.d(data))
+        if 'author' in data:
+            metadata.title = data['author']
+            metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
+        if 'author_intro' in data:
+            metadata.summary = data['author_intro']
+        if 'poster' in data:
+            metadata.posters[data['poster']] = Proxy.Media(HTTP.Request(data['poster']))
 
-
+        
 
 class ModuleAudiobookAlbum(AgentBase):
     module_name = 'book'
@@ -73,12 +93,12 @@ class ModuleAudiobookAlbum(AgentBase):
             data = self.send_info(self.module_name, code)
             if data is not None and self.is_write_json(media):
                 self.save_info(media, data)
-        Log(self.d(data))
+        #Log(self.d(data))
         #data = self.send_info(self.module_name, code)
         metadata.title = data['title']
         metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
         metadata.summary = data['desc']
-        metadata.posters[data['poster']] = Proxy.Preview(HTTP.Request(data['poster']))
+        metadata.posters[data['poster']] = Proxy.Media(HTTP.Request(data['poster']))
         metadata.rating = float(data['ratings'])
         metadata.studio = data.get('publisher', '')
         if 'premiered' in data:
