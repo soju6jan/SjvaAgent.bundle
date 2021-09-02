@@ -7,7 +7,7 @@ class ModuleMovie(AgentBase):
     
     def search(self, results, media, lang, manual, **kwargs):
         try:
-            if manual and (media.name.startswith('MD') or media.name.startswith('MT') or media.name.startswith('MN')):
+            if manual and media.name is not None and (media.name.startswith('MD') or media.name.startswith('MT') or media.name.startswith('MN')):
                 code = media.name
                 if self.is_include_time_info(media):
                     code = code + '|%s' % int(time.time())

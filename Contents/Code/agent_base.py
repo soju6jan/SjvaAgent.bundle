@@ -238,8 +238,13 @@ class AgentBase(object):
                     ret = os.path.join(os.path.dirname(filename), 'info.json')
                     
             elif 'Location' in data['MediaContainer']['Metadata'][0]:
+                # 쇼... ktv, ftv
+                Log('mmmmmmmmmmmmmmmmmmmmmmmm')
+
                 folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
                 ret = os.path.join(folderpath, 'info.json')
+
+                Log(folderpath)
             else:
                 ret = None
             Log('info.json 위치 : %s' % ret)
@@ -291,6 +296,7 @@ class AgentBase(object):
 
         
     # KTV에서 사용. 있으면 추가
+    # ftv에서 시즌정보
     def append_info(self, media, key, info):
         try:
             ret = self.get_json_filepath(media)

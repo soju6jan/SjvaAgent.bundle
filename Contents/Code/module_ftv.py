@@ -8,6 +8,24 @@ class ModuleFtv(AgentBase):
     
     def search(self, results, media, lang, manual):
         try:
+            if manual and media.name is not None and media.name.startswith('FT'):
+                code = media.name
+                meta = MetadataSearchResult(id=code, name=code, year='', score=100, thumb="", lang=lang)
+                results.Append(meta)
+                return
+            
+            if self.is_read_json(media):
+                if manual:
+                    self.remove_info(media)
+                else:
+                    info_json = self.get_info_json(media)
+                    if info_json is not None:
+                        code = info_json['show']['code']
+                        meta = MetadataSearchResult(id=code, name=info_json['show']['title'], year=info_json['show']['year'], score=100, thumb="", lang=lang)
+                        results.Append(meta)
+                        return
+
+
             media.show = unicodedata.normalize('NFC', unicode(media.show)).strip()
             Log('SEARCH : %s' % media.show)
             keyword = media.show
@@ -35,8 +53,19 @@ class ModuleFtv(AgentBase):
     def update(self, metadata, media, lang):
         #self.base_update(metadata, media, lang)
         try: 
-            meta_info = self.send_info(self.module_name, metadata.id)
-            
+            meta_info = None
+            info_json = None
+            is_write_json = self.is_write_json(media)
+
+            if self.is_read_json(media):
+                info_json = self.get_info_json(media)
+                if info_json is not None:
+                    meta_info = info_json['show']
+            if meta_info is None:
+                meta_info = self.send_info(self.module_name, metadata.id)
+                if meta_info is not None and is_write_json:
+                    self.save_info(media, {'show' : meta_info})        
+           
             #Log(json.dumps(meta_info, indent=4))
             self.update_info(metadata, meta_info, media)
             
@@ -57,7 +86,13 @@ class ModuleFtv(AgentBase):
                     def UpdateSeason(media_season_index=media_season_index,  media=media):
                         Log('UpdateSeason : %s', media_season_index)
                         metadata_season = metadata.seasons[media_season_index]
-                        season_meta_info = self.send_info(self.module_name, '%s_%s' % (metadata.id, media_season_index))
+                        season_code = '%s_%s' % (metadata.id, media_season_index)
+                        if info_json is not None and season_code in info_json:
+                            season_meta_info = info_json[season_code]
+                        else:
+                            season_meta_info = self.send_info(self.module_name, season_code)
+                            if season_meta_info is not None and is_write_json:
+                                self.append_info(media, season_code, season_meta_info) 
                         self.update_season(media_season_index, metadata_season, season_meta_info, media)
                     
                         for media_episode_index in media.seasons[media_season_index].episodes:
@@ -195,8 +230,11 @@ class ModuleFtv(AgentBase):
                     url = 'https://tvthemes.plexapp.com/%s.mp3' % tvdb_id
                     Log('테마 : %s', url)
                     if url not in metadata.themes:
-                        valid_names.append(url)
-                        metadata.themes[url] = Proxy.Media(HTTP.Request(url))
+                        try:
+                            metadata.themes[url] = Proxy.Media(HTTP.Request(url))
+                            valid_names.append(url)
+                        except:
+                            pass
                 metadata.themes.validate_keys(valid_names)
             except Exception as e: 
                 Log('Exception:%s', e)
