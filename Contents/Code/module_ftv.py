@@ -8,11 +8,14 @@ class ModuleFtv(AgentBase):
     
     def search(self, results, media, lang, manual):
         try:
-            if manual and media.name is not None and media.name.startswith('FT'):
-                code = media.name
-                meta = MetadataSearchResult(id=code, name=code, year='', score=100, thumb="", lang=lang)
-                results.Append(meta)
-                return
+            if manual and media.show is not None:
+                if media.show.startswith('K'):
+                    return False
+                elif media.show.startswith('FT'):
+                    code = media.show
+                    meta = MetadataSearchResult(id=code, name=code, year='', score=100, thumb="", lang=lang)
+                    results.Append(meta)
+                    return
             
             if self.is_read_json(media):
                 if manual:
@@ -32,8 +35,8 @@ class ModuleFtv(AgentBase):
             Log('>> [%s] [%s] [%s]' % (self.module_name, keyword, media.year))
             search_data = self.send_search(self.module_name, keyword, manual, year=media.year)
 
-            if search_data is None:
-                return 
+            if not search_data:
+                return False
 
             for item in search_data:
                 meta = MetadataSearchResult(id=item['code'], name=item['title'], year=item['year'], score=item['score'], thumb=item['image_url'], lang=lang)

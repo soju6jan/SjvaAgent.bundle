@@ -231,6 +231,8 @@ class AgentBase(object):
                     if section_id in section_id_list:
                         tmp = os.path.splitext(os.path.basename(filename))
                         code = tmp[0].split(' ')[0]
+                        if code[-2] == 'd' and cdoe [-3] == 'c':
+                            code = code[:-3].strip()
                         ret = os.path.join(os.path.dirname(filename), '%s.json' % code)
                     else:
                         ret = os.path.join(os.path.dirname(filename), 'info.json')
@@ -239,12 +241,8 @@ class AgentBase(object):
                     
             elif 'Location' in data['MediaContainer']['Metadata'][0]:
                 # 쇼... ktv, ftv
-                Log('mmmmmmmmmmmmmmmmmmmmmmmm')
-
                 folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
                 ret = os.path.join(folderpath, 'info.json')
-
-                Log(folderpath)
             else:
                 ret = None
             Log('info.json 위치 : %s' % ret)

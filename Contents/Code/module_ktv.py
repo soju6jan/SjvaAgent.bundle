@@ -23,6 +23,12 @@ class ModuleKtv(AgentBase):
 
     def search(self, results, media, lang, manual):
         try:
+            if manual and media.show is not None and media.show.startswith('K'):
+                code, title = media.show.split('|')
+                meta = MetadataSearchResult(id=code, name=title, year='', score=100, thumb="", lang=lang)
+                results.Append(meta)
+                return
+
             Log('SEARCH : %s' % media.show)
             keyword = media.show
             Log('>> %s : %s %s' % (self.module_name, keyword, manual))

@@ -21,8 +21,12 @@ class AgentShow(Agent.TV_Shows):
     def search(self, results, media, lang, manual):
         key = AgentBase.get_key(media)
         Log('Key : %s', key)
-        self.instance_list[key].search(results, media, lang, manual)
+        ret = self.instance_list[key].search(results, media, lang, manual)
+        if key == 'F':
+            if ret == False:
+                ret = self.instance_list['K'].search(results, media, lang, manual)
         
+
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
