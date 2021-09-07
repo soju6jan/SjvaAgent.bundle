@@ -129,7 +129,7 @@ class ModuleJavCensoredBase(AgentBase):
                 actor.name = item['name']
                 actor.photo = item['thumb']
 
-        if 'extra' in data and data['extras'] is not None:
+        if 'extras' in data and data['extras'] is not None:
             for item in data['extras']:
                 if item['mode'] == 'mp4':
                     url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
