@@ -1,5 +1,5 @@
 
-import urllib2, traceback, time
+import urllib2, traceback, time, re, os, io
 
 location = None
 
@@ -111,6 +111,63 @@ def MediaObjectsForURL(url):
                     optimized_for_streaming = True,
                 )
             ]
+        elif url.find('/playvideo/') != -1:
+            # 2021-09-14 통합
+            tmp = url.split('/playvideo/')[1]
+            mode, param = tmp.split('|')
+            if mode == 'mp4':
+                part = PartObject(key=param, container='mp4', optimized_for_streaming=True)
+                part.streams.append(VideoStreamObject(codec=VideoCodec.H264))
+                part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2))
+                return [MediaObject(parts=[part], container='mp4', video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC)]
+            elif mode in ['kakao', 'youtube', 'naver']:
+                prefs = get_prefs()
+                redirect_url = '{ddns}/metadata/normal/stream?mode={mode}&param={param}'.format(
+                    ddns=prefs['server'],
+                    mode=mode,
+                    param=param,
+                )
+                Log('mp4 : %s', redirect_url)
+                return [
+                    MediaObject(
+                        parts = [
+                            PartObject(
+                                key=redirect_url,
+                                container='mp4', 
+                            )
+                        ],
+                        container='mp4', 
+                        video_codec=VideoCodec.H264, 
+                        audio_codec=AudioCodec.AAC,
+                        optimized_for_streaming = True,
+                    )
+                ]
+            elif mode in ['tving', 'tving_movie', 'wavve', 'wavve_movie']:
+                prefs = get_prefs()
+                redirect_url = '{ddns}/metadata/normal/stream?mode={mode}&param={param}'.format(
+                    ddns=prefs['server'],
+                    mode=mode,
+                    param=param,
+                )
+                Log('hls : %s', redirect_url)
+                return [
+                    MediaObject(
+                        parts = [
+                            PartObject(
+                                key=redirect_url,
+                                container='mpegts', 
+                            )
+                        ],
+                        protocol="hls",
+                        container='mpegts', 
+                        video_codec=VideoCodec.H264, 
+                        audio_codec=AudioCodec.AAC,
+                        optimized_for_streaming = True,
+                        #video_resolution = 'sd', #ios 튕김
+                    )
+                ]
+
+        
         elif url.find('/wavve_movie/') != -1:
             return [
                 MediaObject(
@@ -133,6 +190,23 @@ def MediaObjectsForURL(url):
         Log(traceback.format_exc())
 
 
+def get_prefs():
+    try:
+        ret = {'server':'', 'apikey':'', 'end_noti_filepath':'', 'include_time_info':''}
+        CURRENT_PATH = re.sub(r'^\\\\\?\\', '', os.getcwd())
+        pref_filepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(CURRENT_PATH))), 'Plug-in Support', 'Preferences', 'com.plexapp.agents.sjva_agent.xml')
+        if os.path.exists(pref_filepath):
+            tfile = io.open(pref_filepath, encoding='utf8')
+            text = tfile.read()
+            tfile.close()
+            if text is not None:
+                prefs = XML.ElementFromString(text)
+                for child in prefs.getchildren():
+                    ret[child.tag] = '' if child.text is None else child.text
+    except Exception as e: 
+        Log('Exception:%s', e)
+        Log(traceback.format_exc())
+    return ret
 
 
 @indirect

@@ -4,7 +4,7 @@ from .agent_base import AgentBase
 from .module_jav_censored import ModuleJavCensoredDvd, ModuleJavCensoredAma, ModuleJavFc2
 from .module_ott_show import ModuleOttShow
 from .module_movie import ModuleMovie
-
+from .module_movie_yaml import ModuleMovieYaml
 
 
 class AgentMovie(Agent.Movies):
@@ -20,11 +20,15 @@ class AgentMovie(Agent.Movies):
         'L' : ModuleJavFc2(), 
         'P' : ModuleOttShow(),
         'M' : ModuleMovie(), 
+        'Y' : ModuleMovieYaml(),
     }
 
     def search(self, results, media, lang, manual):
         key = AgentBase.get_key(media)
         Log('Key : %s', key)
+        ret = self.instance_list['Y'].search(results, media, lang, manual)
+        if ret or key == 'Y':
+            return
         self.instance_list[key].search(results, media, lang, manual)
         
     def update(self, metadata, media, lang):

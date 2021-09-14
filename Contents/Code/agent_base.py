@@ -29,6 +29,7 @@ class AgentBase(object):
         # 오디오북?
         'com.plexapp.agents.sjva_agent_audiobook' : 'B',            # B : 오디오북
         'com.plexapp.agents.sjva_agent_audiobook_json' : 'J',       # Y : 오디오북 yaml
+        # Y : yaml
     }
 
     extra_map = {
@@ -211,7 +212,6 @@ class AgentBase(object):
         try:
             data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % media.id)
             section_id = str(data['MediaContainer']['librarySectionID'])
-            #Log('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
             #Log(self.d(data))
             if data['MediaContainer']['Metadata'][0]['type'] == 'album':
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
@@ -222,6 +222,7 @@ class AgentBase(object):
 
             if 'Media' in data['MediaContainer']['Metadata'][0]:
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+                Log(filename)
                 if self.module_name in ['movie']:
                     ret = os.path.join(os.path.dirname(filename), 'info.json')
                 elif self.module_name in ['jav_censored', 'jav_censored_ama', 'jav_fc2']:
@@ -375,3 +376,42 @@ class AgentBase(object):
     
     def d(self, data):
         return json.dumps(data, indent=4, ensure_ascii=False)
+    
+
+
+    def get_yaml_filepath(self, media, content_type):
+        try:
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % media.id)
+            section_id = str(data['MediaContainer']['librarySectionID'])
+            #Log(self.d(data))
+            if data['MediaContainer']['Metadata'][0]['type'] == 'album':
+                data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
+                #Log(self.d(data))
+            elif data['MediaContainer']['Metadata'][0]['type'] == 'artist':
+                data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % data['MediaContainer']['Metadata'][0]['Children']['Metadata'][0]['ratingKey'])
+
+            if content_type == 'movie':
+                # 파일명.yaml / xxx-aaa.yaml / movie.yaml
+                folder_list = []
+                if 'Media' in data['MediaContainer']['Metadata'][0]:
+                    for media in data['MediaContainer']['Metadata'][0]['Media']:
+                        for part in media['Part']:
+                            filepath = part['file']
+                            folderpath = os.path.dirname(filepath)
+                            filename = os.path.basename(filepath)
+                            tmp = os.path.splitext(filename)
+                            yaml_filepath = os.path.join(folderpath, '%s.yaml' % tmp[0])
+                            if os.path.exists(yaml_filepath):
+                                return yaml_filepath
+                            code = tmp[0].split(' ')[0]
+                            if code[-2] == 'd' and cdoe [-3] == 'c':
+                                code = code[:-3].strip(' .-')
+                            yaml_filepath = os.path.join(folderpath, '%s.yaml' % code)
+                            if os.path.exists(yaml_filepath):
+                                return yaml_filepath
+                            yaml_filepath = os.path.join(folderpath, 'movie.yaml')
+                            if os.path.exists(yaml_filepath):
+                                return yaml_filepath
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
