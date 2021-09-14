@@ -34,3 +34,4 @@ class AgentMovie(Agent.Movies):
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
+        self.instance_list['Y'].contribute(metadata, media, lang)

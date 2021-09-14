@@ -3,6 +3,18 @@ import os, traceback, json, urllib, re, unicodedata, random, time, io
 from .agent_base import AgentBase
 import yaml
 
+extra_type_map = {
+    'trailer' : TrailerObject,
+    'deleted' : DeletedSceneObject,
+    'behindthescenes' : BehindTheScenesObject,
+    'interview' : InterviewObject,
+    'scene' : SceneOrSampleObject,
+    'featurette' : FeaturetteObject,
+    'short' : ShortObject,
+    'other' : OtherObject
+}
+
+
 class ModuleMovieYaml(AgentBase):
     module_name = 'movie_yaml'
     
@@ -53,6 +65,9 @@ class ModuleMovieYaml(AgentBase):
                 return False
             data = yaml.load(io.open(filepath), Loader=yaml.FullLoader)
             Log(self.d(data))
+            is_primary = self.get(data, 'primary', False)
+            if is_primary == False:
+                return False
             timestamp = int(time.time())
             posters = self.get(data, 'posters', None)
             thumb = ''
@@ -162,16 +177,6 @@ class ModuleMovieYaml(AgentBase):
                 r.link = self.get(review, 'link', None)
                 r.text = self.get(review, 'text', None)
 
-            #metadata.extras.clear()
-            extra_type_map = {'trailer' : TrailerObject,
-                'deleted' : DeletedSceneObject,
-                'behindthescenes' : BehindTheScenesObject,
-                'interview' : InterviewObject,
-                'scene' : SceneOrSampleObject,
-                'featurette' : FeaturetteObject,
-                'short' : ShortObject,
-                'other' : OtherObject
-            }
             for extra in self.get(data, 'extras', []):
                 mode = self.get(extra, 'mode', None)
                 extra_type = self.get(extra, 'type', 'trailer')
@@ -191,4 +196,142 @@ class ModuleMovieYaml(AgentBase):
             Log('Exception:%s', e)
             Log(traceback.format_exc())
 
+    # 다른 모듈에서 처리한 이후 있는 값들만 덮어씌움.
+    def contribute(self, metadata, media, lang):
+        try:
+            filepath = self.get_yaml_filepath(media, 'movie')
+            Log('YAML movie : %s', filepath)
+            if filepath is None:
+                return False
+            data = yaml.load(io.open(filepath), Loader=yaml.FullLoader)
+            Log(self.d(data))
 
+            value = self.get(data, 'title', None)
+            if value is not None:
+                metadata.title = value
+            
+            value = self.get(data, 'original_title', None)
+            if value is not None:
+                metadata.original_title = value
+
+            value = self.get(data, 'title_sort', None)
+            if value is not None:
+                metadata.title_sort = unicodedata.normalize('NFKD', value)
+
+            value = self.get(data, 'originally_available_at', None)
+            if value is not None:
+                metadata.originally_available_at = Datetime.ParseDate(value.replace('.', '-')).date()
+            
+            value = self.get(data, 'year', None)
+            if value is not None:
+                metadata.year = value
+
+            value = self.get(data, 'studio', None)
+            if value is not None:
+                metadata.studio = value
+            
+            value = self.get(data, 'content_rating', None)
+            if value is not None:
+                metadata.content_rating = value
+            
+            value = self.get(data, 'tagline', None)
+            if value is not None:
+                metadata.tagline = value
+
+            value = self.get(data, 'summary', None)
+            if value is not None:
+                metadata.summary = value
+            
+            value = self.get(data, 'rating', None)
+            if value is not None:
+                metadata.rating = value
+            
+            value = self.get(data, 'rating_image', None)
+            if value is not None:
+                metadata.rating_image = value
+            
+            value = self.get(data, 'audience_rating', None)
+            if value is not None:
+                metadata.audience_rating = value
+            
+            value = self.get(data, 'audience_rating_image', None)
+            if value is not None:
+                metadata.audience_rating_image = value
+            
+            field_list = [
+                ['genres', metadata.genres],
+                ['collections', metadata.collections],
+                ['countries', metadata.countries],
+                ['similar', metadata.similar],
+            ]
+
+            for field in field_list:
+                value = self.get_list(data, field[0])
+                if len(value) > 0:
+                    field[1].clear()
+                    for tmp in value:
+                        field[1].add(tmp)
+
+            field_list = [
+                ['writers', metadata.writers],
+                ['directors', metadata.directors],
+                ['producers', metadata.producers],
+                ['roles', metadata.roles],
+            ]
+            for field in field_list:
+                value = self.get_person_list(data, field[0])
+                if len(value) > 0:
+                    #field[1].clear()
+                    for person in value:
+                        meta_person = field[1].new()
+                        meta_person.name = self.get(person, 'name', None)
+                        meta_person.role = self.get(person, 'role', None)
+                        meta_person.photo = self.get(person, 'photo', None)
+
+            field_list = [
+                ['posters', metadata.posters],
+                ['art', metadata.art],
+                ['themes', metadata.themes],
+            ]
+            for field in field_list:
+                value = self.get_media_list(data, field[0])
+                if len(value) > 0:
+                    valid_names = []
+                    for idx, media in enumerate(value):
+                        valid_names.append(media['url'])
+                        if 'thumb' in media:
+                            field[1][media['url']] = Proxy.Preview(HTTP.Request(media['thumb']).content, sort_order=idx+1)
+                        else:
+                            field[1][media['url']] = Proxy.Preview(HTTP.Request(media['url']).content, sort_order=idx+1)
+                    field[1].validate_keys(valid_names)
+
+            value = self.get(data, 'reviews', [])
+            if len(value) > 0:
+                #metadata.reviews.clear()
+                for review in value:
+                    r = metadata.reviews.new()
+                    r.author = self.get(review, 'author', None)
+                    r.source = self.get(review, 'source', None)
+                    r.image = self.get(review, 'image', None)
+                    r.link = self.get(review, 'link', None)
+                    r.text = self.get(review, 'text', None)
+
+            value = self.get(data, 'extras', [])
+            if len(value) > 0:
+                for extra in value:
+                    mode = self.get(extra, 'mode', None)
+                    extra_type = self.get(extra, 'type', 'trailer')
+                    extra_class = extra_type_map[extra_type]
+                    url = 'sjva://sjva.me/playvideo/%s|%s' % (mode, extra.get('param'))
+                    metadata.extras.add(
+                        extra_class(
+                            url=url, 
+                            title=self.change_html(extra.get('title', '')),
+                            originally_available_at = Datetime.ParseDate(self.get(extra, 'originally_available_at', '1900-12-31').replace('.', '-')).date(),
+                            thumb=self.get(extra, 'thumb', '')
+                        )
+                    )
+                return
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
