@@ -239,7 +239,7 @@ class ModuleMovie(AgentBase):
                 #    extra_url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % extra['content_url']
                 if extra_url is not None:
                     metadata.extras.add(
-                        self.extra_map[extra['content_type']](
+                        self.extra_map[extra['content_type'].lower()](
                             url=extra_url, 
                             title=extra['title'],
                             thumb=thumb,

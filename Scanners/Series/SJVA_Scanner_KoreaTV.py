@@ -20,13 +20,12 @@ date_regexps = [
 try:
     import logging
     import logging.handlers
-    logger = logging.getLogger('sjva_scanner')
-    logger.setLevel(logging.ERROR) 
+    logger = logging.getLogger('sjva_ktv')
+    logger.setLevel(logging.DEBUG) 
     formatter = logging.Formatter(u'[%(asctime)s|%(levelname)s] : %(message)s')
-    #file_max_bytes = 10 * 1024 * 1024 
-    filename = os.path.join(os.path.dirname( os.path.abspath( __file__ ) ), '../../', 'Logs', 'sjva.scanner.korea.tv.log')
-    fileHandler = logging.FileHandler(filename, encoding='utf8')
-    #fileHandler = logging.handlers.RotatingFileHandler(filename=filename), maxBytes=file_max_bytes, backupCount=5, encoding='euc-kr')
+    file_max_bytes = 10 * 1024 * 1024 
+    filename = os.path.join(os.path.dirname( os.path.abspath( __file__ ) ), '../../', 'Logs', 'sjva.scanner.ktv.log')
+    fileHandler = logging.handlers.RotatingFileHandler(filename=filename, maxBytes=file_max_bytes, backupCount=5, encoding='utf8')
     fileHandler.setFormatter(formatter)
     logger.addHandler(fileHandler)
 except:
@@ -52,7 +51,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     season_num = None
     if len(tmp) == 2 and tmp[0] != '': 
         try:
-            match = re.search(r'(?P<season_num>\d{1,4})\s*((?P<season_title>.*?))?', tmp[1], re.IGNORECASE)
+            match = re.search(r'(?P<season_num>\d{1,8})\s*((?P<season_title>.*?))?', tmp[1], re.IGNORECASE)
             if match:
                 season_num = match.group('season_num')
                 logger.debug('- season_num:%s', season_num)

@@ -1,0 +1,206 @@
+#  yaml 파일을 사용하는 메타데이터 관리
+#
+#  - KODI에서 사용하던 nfo와 비슷한 역할이지만 편집이 용이한 yaml 형식 사용
+#
+#  - 단독 메타데이터로 사용하는 방식과 타 모듈에 기여하는 방식 2가지 용도로 사용.
+#   1. 단독 메타데이터
+#    code 필드를 사용하는 독립 메타데이터를 구성함.
+#    primary : true 값을 반드시 넣어야 함.
+#    사용 예) 메터데이터 검색 사이트에서 정보를 찾기 힘든 경우. 개인 영상 정리 용도
+#    첫 스캔시 primary 값이 true이면 섹션 기본 에이전트(영화,AV)에 상관없이 yaml 내용만으로 메타를 구성하며 기본 에이전트를 호출하지 않음.
+#    스캔 이후 yaml를 파일을 만들어 적용하려면 일치항목찾기를 해야 함.
+#
+#   2. 기여 메타데이터
+#    섹션 기본 에이전트로 정보가 구성되어 있지만 부족한 정보를 채우는 용도로 사용.
+#    예) 리뷰에 자신의 감상평 남기기. youtube 부가영상 추가 등
+#    비슷한 용도로 info.json 과 같은 파일을 편집하여 사용할 수 있지만 json파일은 일치항목찾기시 파일을 삭제하고 새로운 정보가 있으면 매번 갱신됨. 
+#
+# 
+#  - movie .yaml 파일 탐색 순서
+#    1. 파일명.yaml 
+#    2. code.yaml 
+#       av 의 경우 xxx-123 [XXX-123 4.5G].mp4 같은 파일의 경우
+#       첫 공백이전의 문자(cdX 제외).yaml 파일 가능
+#    3. 폴더내의 movie.yaml
+#
+#  - 모든 필드는 생략 가능
+#    title / summary / poster 값만 넣어도 처리
+#
+#  - 각 필드별 주석에 용도 / 형식 / 생략시 기본값 표시
+#
+
+# true : 독립 메타데이터 
+# false : 기여 메타데이터
+primary : true
+
+# code : 컨텐츠를 구분하는 유일한 값 / 공백이 없는 문자열 / timestamp 사용
+# 기여일 경우 사용 안함.
+# timestampe 값을 사용하는 경우 일치항목 찾기 할때마다 메타데이터 폴더를 새로 생성하게 됨
+# 가급적 자신이 생각하는 unique 한 값을 사용하는게 좋음
+code : 
+
+# title : 제목 / 문자열 / 제목 [timestamp]
+title : 
+
+# original_title : 원 제목 / 문자열 / title 값 사용
+original_title : 
+
+# title_sort : 제목 정렬 / 문자열 / title 값 사용
+# NFKC 유니코드 정규화 방식 사용 
+title_sort : 
+
+# year : 년도 / 숫자 / 빈값
+# 영화 제목 밑에 표시되는 년도
+year : 
+
+# originally_available_at : 원 출처(개봉일) / 날짜형식 YYYY-MM-DD / 빈값
+originally_available_at : 
+
+# content_rating : 컨텐츠 등급 / 문자열 / 빈값
+content_rating : 
+
+# 평정 / 실수 / 빈값
+# rottentomatoes 이미지를 사용하는 경우에만 rating, audience_rating 표시
+rating : 
+audience_rating : 
+# imdb://image.rating 
+# Certified Fresh : rottentomatoes://image.rating.certified
+# Fresh : rottentomatoes://image.rating.ripe
+# Rotten : rottentomatoes://image.rating.rotten
+# 생략시 기본 별 이미지
+rating_image : rottentomatoes://image.rating.certified
+# Upright : rottentomatoes://image.rating.upright
+# Spilled : rottentomatoes://image.rating.spilled
+audience_rating_image : rottentomatoes://image.rating.upright
+
+
+# 스튜디오 / 문자열 / 빈값
+studio : 
+
+# 주제 / 문자열 / 빈값
+tagline : 
+
+# 요약 / 문자열 / 빈값
+# summary : | - 줄바꿈 유지
+# summary : > - 두 줄 바꿈이 줄바꿈으로 
+summary : |
+  AAA
+  BBB
+
+  CCC
+
+
+  
+# 형식 : 문자열 리스트
+#  - 을 사용하거나 []를 사용하는 문자열 리스트가 기본.
+#  편의를 위해 , 으로 구분되는 문자열도 가능
+
+# 장르 / 문자열 리스트 / 빈값
+genres : 
+  - 장르1
+  - 장르2
+
+# 컬렉션 / 문자열 리스트 / 빈값
+collections : [컬렉션1, 컬렉션1]
+
+# 국가 / 문자열 리스트 / 빈값
+countries : 국가1, 국가2
+
+# 사용처 불문명
+similar : 조폭마누라
+
+
+# 형식 : 사람
+# name / role / phono 값을 가지는 dict의 list형
+# 편의를 위해 , 으로 구분되는 문자열도 가능. name으로 처리
+
+# 각본 / 사람 / 빈값
+writers : 극본1, 극본2, 극본3
+directors : 
+  - name : 홍길도
+    role : 감독
+    photo : 
+
+producers : 제작자
+roles: 
+  - name : 배우1
+    role : 역할1
+    photo : 
+  - name : 배우2
+    role : 역할2
+    photo : 
+
+
+
+# 형식 : 미디어
+# url / thumb 값을 가지는 dict의 list형식
+# 편의를 위해 문자열인 경우 1개짜리 url 값으로 처리
+posters :
+  - url : http://t1.daumcdn.net/cfile/136F1B10AB0099C4DD
+    thumb : https://search1.daumcdn.net/thumb/C320x400.q85/?fname=http%3A%2F%2Fcfile170.uf.daum.net%2Fimage%2F21079A4855D3FFBC04F1DA
+
+art : https://img1.daumcdn.net/thumb/C254x0/?fname=http%3A%2F%2Ft1.daumcdn.net%2Fcfile%2F136F1B10AB0D7F938A
+
+themes : https://cdn.discordapp.com/attachments/689800940626378806/861253246055219200/theme.mp3
+
+
+# 형식 : 리뷰
+# author / source / image / link / text 값을 가지는 dict의 list 형식
+# image 는 ratind에 사용한 이미지만 가능
+# text : 여러줄을 작성해도 한줄로
+reviews : 
+  - author : author1
+    source : source2
+    image : rottentomatoes://image.review.fresh
+    link : https://daum.net
+    text : 감상평
+
+  - author : author2
+    source : source2
+    image : rottentomatoes://image.review.fresh
+    link : 
+    text : Good
+
+
+# 부가영상
+# mode 종류 : mp4, kakao, naver, youtube
+# type 종류 : trailer, deletedscene, behindthescenes, interview, sceneorsample, featurette, short, other
+# param 
+#  mp4 : 고정주소
+#  kakao : kakaotv cliplink 번호.
+#     예) https://tv.kakao.com/channel/3878237/cliplink/422219808 => 422219808
+#  youtube : v값
+#    예) https://www.youtube.com/watch?v=6Gk8l4PZCiA => 6Gk8l4PZCiA
+#  naver : 네이버 영화 동영상 주소에서 code,mid
+#    예) https://movie.naver.com/movie/bi/mi/mediaView.naver?code=187348&mid=50362 => 187348,50362
+
+extras : 
+  - mode : mp4
+    type : trailer
+    param : 
+    title : 
+    thumb : 
+    originally_available_at : 
+
+  - mode : kakao
+    type : featurette
+    param : 422219808
+    title : 기억이 변했다! 과거도 변했다
+    thumb : http://t1.daumcdn.net/tvpot/thumb/s1c02RKkPxPxIXPQZPxE35E/thumb.png?ts=1562631459
+ 
+  
+  - mode : naver
+    type : interview
+    param : 187348,50362
+    originally_available_at : "2015-11-17"
+    title : 하이라이트 영상
+    thumb : "https://ssl.pstatic.net/imgmovie/multimedia/MOVIECLIP/FEATURE/28981_20151117020238.jpg"
+    
+
+  - mode : youtube
+    type : short
+    param : 6Gk8l4PZCiA
+    originally_available_at : "2015-11-17"
+    title : How to Eavesdrop on Your Neighbours With a Laser | The Voyeurs | Prime Video
+
+

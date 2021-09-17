@@ -27,6 +27,8 @@ class AgentMovie(Agent.Movies):
         key = AgentBase.get_key(media)
         Log('Key : %s', key)
         ret = self.instance_list['Y'].search(results, media, lang, manual)
+        Log('2222222222222222')
+        Log(ret)
         if ret or key == 'Y':
             return
         self.instance_list[key].search(results, media, lang, manual)
@@ -34,4 +36,6 @@ class AgentMovie(Agent.Movies):
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
-        self.instance_list['Y'].contribute(metadata, media, lang)
+        self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
+
+         

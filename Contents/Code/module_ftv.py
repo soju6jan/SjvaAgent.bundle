@@ -175,7 +175,7 @@ class ModuleFtv(AgentBase):
                 elif item['mode'] == 'kakao':
                     url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=item['mode'], param=item['content_url'], apikey=Prefs['apikey'])
                     url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
-                try: metadata.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
+                try: metadata.extras.add(self.extra_map[item['content_type'].lower()](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
                 except: pass
 
         # rating

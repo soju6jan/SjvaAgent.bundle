@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, traceback, json, urllib, re, unicodedata, urllib2
-from .agent_base import AgentBase
+from .agent_base import AgentBase, PutRequest
 
 
 class ModuleKtv(AgentBase):
@@ -175,7 +175,7 @@ class ModuleKtv(AgentBase):
                     param=item['content_url'], 
                     apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'])
                 url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
-            metadata.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
+            metadata.extras.add(self.extra_map[item['content_type'].lower()](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
 
         # rating
         for item in meta_info['ratings']:
@@ -307,7 +307,7 @@ class ModuleKtv(AgentBase):
                         apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'])
                         url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
                         #url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
-                    episode.extras.add(self.extra_map[item['content_type']](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
+                    episode.extras.add(self.extra_map[item['content_type'].lower()](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
             else:
                 ott_mode = 'full'
 
@@ -464,9 +464,10 @@ class ModuleKtv(AgentBase):
             # 시즌 title, summary
             if is_write_json:
                 self.save_info(media, info_json)
-
-            if not flag_media_season:
-                return
+            
+            # 2021-09-15 주석처리함. 임의의 시즌으로 분할하는 경우를 고려
+            #if not flag_media_season:
+            #    return
             url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
             data = JSON.ObjectFromURL(url)
             section_id = data['MediaContainer']['librarySectionID']
@@ -480,7 +481,7 @@ class ModuleKtv(AgentBase):
                 season_title = None
                 if tmp != metadata.title:
                     Log(tmp)
-                    match = Regex(r'(?P<season_num>\d{1,4})\s*(?P<season_title>.*?)$').search(tmp)
+                    match = Regex(r'(?P<season_num>\d{1,8})\s*(?P<season_title>.*?)$').search(tmp)
                     if match:
                         Log('season_num : %s', match.group('season_num'))
                         Log('season_title : %s', match.group('season_title'))
@@ -499,12 +500,3 @@ class ModuleKtv(AgentBase):
             Log(traceback.format_exc())
         
 
-
-
-
-class PutRequest(urllib2.Request):
-    def __init__(self, *args, **kwargs):
-        return urllib2.Request.__init__(self, *args, **kwargs)
-
-    def get_method(self, *args, **kwargs):
-        return 'PUT'

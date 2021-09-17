@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata, time
+import os, traceback, json, urllib, re, unicodedata, time, urllib2
 from io import open
 from functools import wraps
 
@@ -33,14 +33,14 @@ class AgentBase(object):
     }
 
     extra_map = {
-        'Trailer' : TrailerObject,
-        'DeletedScene' : DeletedSceneObject,
-        'BehindTheScenes' : BehindTheScenesObject, 
-        'Interview' : InterviewObject, 
-        'SceneOrSample' : SceneOrSampleObject,
-        'Featurette' : FeaturetteObject,
-        'Short' : ShortObject,
-        'Other' : OtherObject
+        'trailer' : TrailerObject,
+        'deletedscene' : DeletedSceneObject,
+        'behindthescenes' : BehindTheScenesObject, 
+        'interview' : InterviewObject, 
+        'sceneorsample' : SceneOrSampleObject,
+        'featurette' : FeaturetteObject,
+        'short' : ShortObject,
+        'other' : OtherObject
     }
     
     token = None
@@ -384,11 +384,13 @@ class AgentBase(object):
             data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % media.id)
             section_id = str(data['MediaContainer']['librarySectionID'])
             #Log(self.d(data))
+            """
             if data['MediaContainer']['Metadata'][0]['type'] == 'album':
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
                 #Log(self.d(data))
             elif data['MediaContainer']['Metadata'][0]['type'] == 'artist':
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % data['MediaContainer']['Metadata'][0]['Children']['Metadata'][0]['ratingKey'])
+            """
 
             if content_type == 'movie':
                 # 파일명.yaml / xxx-aaa.yaml / movie.yaml
@@ -412,6 +414,194 @@ class AgentBase(object):
                             yaml_filepath = os.path.join(folderpath, 'movie.yaml')
                             if os.path.exists(yaml_filepath):
                                 return yaml_filepath
+            elif content_type == 'show':
+                filepath_list = {'show':None, 'seasons':[]}
+                if 'Location' in data['MediaContainer']['Metadata'][0]:
+                    folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
+                    yaml_filepath = os.path.join(folderpath, 'show.yaml')
+                    if os.path.exists(yaml_filepath):
+                        filepath_list['show'] = yaml_filepath
+                    filelist = os.listdir(folderpath)
+                    for filename in filelist:
+                        filepath = os.path.join(folderpath, filename)
+                        if os.path.isdir(filepath):
+                            season_yaml_filepath = os.path.join(filepath, 'season.yaml')
+                            if os.path.exists(season_yaml_filepath):
+                                filepath_list['seasons'].append(season_yaml_filepath)
+                    return filepath_list
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
+
+    
+    # for YAML
+    def get(self, data, field, default):
+        ret = data.get(field, None)
+        if ret is None or ret == '':
+            ret = default
+        return ret
+    
+    def get_list(self, data, field):
+        ret = data.get(field, None)
+        if ret is None:
+            ret = []
+        else:
+            if type(ret) != type([]):
+                ret = [x.strip() for x in ret.split(',')]
+        return ret
+    
+    def get_person_list(self, data, field):
+        ret = data.get(field, None)
+        if ret is None:
+            ret = []
+        else:
+            if type(ret) != type([]):
+                tmp = []
+                for value in ret.split(','):
+                    tmp.append({'name':value.strip()})
+                ret = tmp
+        return ret
+
+    def get_media_list(self, data, field):
+        ret = data.get(field, None)
+        if ret is None:
+            ret = []
+        else:
+            if type(ret) != type([]):
+                tmp = []
+                for value in ret.split(','):
+                    tmp.append({'url':value.strip()})
+                ret = tmp
+        return ret 
+
+
+    def set_data(self, meta, data, field, is_primary):
+        try:
+            value = self.get(data, field, None)
+            if value is not None:
+                if field == 'title_sort':
+                    value = unicodedata.normalize('NFKD', value)
+                elif field == 'originally_available_at':
+                    value = Datetime.ParseDate(value).date()
+                elif field in ['rating', 'audience_rating']:
+                    value = float(value)
+                meta = value
+            elif is_primary:
+                meta = None
+        except Exception as exception: 
+            Log('Exception:%s', exception)
+            Log(traceback.format_exc())    
+
+
+    def set_data_list(self, meta, data, field, is_primary):
+        try:
+            value = self.get_list(data, field)
+            if len(value) > 0:
+                meta.clear()
+                for tmp in value:
+                    meta.add(tmp)
+            elif is_primary:
+                meta.clear()
+
+        except Exception as exception: 
+            Log('Exception:%s', exception)
+            Log(traceback.format_exc())
+
+    def set_data_person(self, meta, data, field, is_primary):
+        try:
+            value = self.get_person_list(data, field)
+            if len(value) > 0:
+                meta.clear()
+                for person in value:
+                    meta_person = meta.new()
+                    meta_person.name = self.get(person, 'name', None)
+                    meta_person.role = self.get(person, 'role', None)
+                    meta_person.photo = self.get(person, 'photo', None)
+            elif is_primary:
+                meta.clear()
+
+        except Exception as exception: 
+            Log('Exception:%s', exception)
+            Log(traceback.format_exc())
+
+    def set_data_media(self, meta, data, field, is_primary):
+        try:
+            value = self.get_media_list(data, field)
+            if len(value) > 0:
+                valid_names = []
+                for idx, media in enumerate(value):
+                    valid_names.append(media['url'])
+                    if 'thumb' in media:
+                        meta[media['url']] = Proxy.Preview(HTTP.Request(media['thumb']).content, sort_order=idx+1)
+                    else:
+                        meta[media['url']] = Proxy.Preview(HTTP.Request(media['url']).content, sort_order=idx+1)
+                meta.validate_keys(valid_names)
+            elif is_primary:
+                meta.validate_keys([])
+            
+
+        except Exception as exception: 
+            Log('Exception:%s', exception)
+            Log(traceback.format_exc())
+
+    def set_data_reviews(self, meta, data, field, is_primary):
+        try:
+            value = self.get(data, field, [])
+            if len(value) > 0:
+                meta.clear()
+                for review in value:
+                    r = meta.new()
+                    r.author = self.get(review, 'author', None)
+                    r.source = self.get(review, 'source', None)
+                    r.image = self.get(review, 'image', None)
+                    r.link = self.get(review, 'link', None)
+                    r.text = self.get(review, 'text', None)
+            elif is_primary:
+                meta.clear()
+          
+        except Exception as exception: 
+            Log('Exception:%s', exception)
+            Log(traceback.format_exc())
+
+    def set_data_extras(self, meta, data, field, is_primary):
+        try:
+            value = self.get(data, field, [])
+            if len(value) > 0:
+                for extra in value:
+                    mode = self.get(extra, 'mode', None)
+                    extra_type = self.get(extra, 'type', 'trailer')
+                    extra_class = self.extra_map[extra_type]
+                    url = 'sjva://sjva.me/playvideo/%s|%s' % (mode, extra.get('param'))
+                    meta.add(
+                        extra_class(
+                            url=url, 
+                            title=self.change_html(extra.get('title', '')),
+                            originally_available_at = Datetime.ParseDate(self.get(extra, 'originally_available_at', '1900-12-31')).date(),
+                            thumb=self.get(extra, 'thumb', '')
+                        )
+                    )
+            elif is_primary:
+                Log(meta)
+                meta.clear()
+        except Exception as exception: 
+            Log('Exception:%s', exception)
+            Log(traceback.format_exc())
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PutRequest(urllib2.Request):
+    def __init__(self, *args, **kwargs):
+        return urllib2.Request.__init__(self, *args, **kwargs)
+
+    def get_method(self, *args, **kwargs):
+        return 'PUT'
