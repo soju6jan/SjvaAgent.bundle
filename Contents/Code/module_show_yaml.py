@@ -61,6 +61,16 @@ class ModuleShowYaml(AgentBase):
             finally:
                 if 'seasons' not in data:
                     data['seasons'] = {}
+            if type(data['seasons']) == type([]):
+                to_dict = {}
+                for season in data['seasons']:
+                    try:
+                        if str(season['index']) not in to_dict:
+                            to_dict[str(season['index'])] = season
+                    except:
+                        pass
+                data['seasons'] = to_dict
+
             
             for season_yamlpath in filepath_list['seasons']:
                 try:
@@ -71,6 +81,18 @@ class ModuleShowYaml(AgentBase):
                 except Exception as exception: 
                     Log('Exception:%s', exception)
                     Log(traceback.format_exc())  
+
+            # episodes to dict
+            for season_index, season in data['seasons'].items():
+                if 'episodes' in season and type(season['episodes']) == type([]):
+                    to_dict = {}
+                    for episode in season['episodes']:
+                        try:
+                            if str(episode['index']) not in to_dict:
+                                to_dict[str(episode['index'])] = episode
+                        except:
+                            pass
+                    season['episodes'] = to_dict
 
             Log(self.d(data))
 
@@ -83,100 +105,39 @@ class ModuleShowYaml(AgentBase):
                 except Exception as e: 
                     Log(str(e))
             else:
-                self.set_data(metadata.title, data, 'title')
-                self.set_data(metadata.original_title, data, 'original_title')
-                self.set_data(metadata.title_sort, data, 'title_sort')
-                self.set_data(metadata.originally_available_at, data, 'originally_available_at')
+                self.set_data(metadata, data, 'title', is_primary)
+                self.set_data(metadata, data, 'original_title', is_primary)
+                self.set_data(metadata, data, 'title_sort', is_primary)
+                self.set_data(metadata, data, 'originally_available_at', is_primary)
                             
 
-            self.set_data(metadata.studio, data, 'studio')
-            self.set_data(metadata.content_rating, data, 'content_rating')
-            self.set_data(metadata.summary, data, 'summary')
-            self.set_data(metadata.rating, data, 'rating')
+            self.set_data(metadata, data, 'studio', is_primary)
+            self.set_data(metadata, data, 'content_rating', is_primary)
+            self.set_data(metadata, data, 'summary', is_primary)
+            self.set_data(metadata, data, 'rating', is_primary)
             
-            field_list = [
-                ['genres', metadata.genres],
-                ['collections', metadata.collections],
-                #['countries', metadata.countries],
-                #['similar', metadata.similar],
-            ]
+            self.set_data_list(metadata, data, 'genres', is_primary)
+            self.set_data_list(metadata, data, 'collections', is_primary)
 
-            for field in field_list:
-                value = self.get_list(data, field[0])
-                if len(value) > 0:
-                    field[1].clear()
-                    for tmp in value:
-                        field[1].add(tmp)
+            self.set_data_person(metadata, data, 'roles', is_primary)
 
-            field_list = [
-                #['writers', metadata.writers],
-                #['directors', metadata.directors],
-                #['producers', metadata.producers],
-                ['roles', metadata.roles],
-            ]
-            for field in field_list:
-                value = self.get_person_list(data, field[0])
-                if len(value) > 0:
-                    #field[1].clear()
-                    for person in value:
-                        meta_person = field[1].new()
-                        meta_person.name = self.get(person, 'name', None)
-                        meta_person.role = self.get(person, 'role', None)
-                        meta_person.photo = self.get(person, 'photo', None)
-
-            field_list = [
-                ['posters', metadata.posters],
-                ['art', metadata.art],
-                ['themes', metadata.themes],
-            ]
-            for field in field_list:
-                value = self.get_media_list(data, field[0])
-                if len(value) > 0:
-                    valid_names = []
-                    for idx, me in enumerate(value):
-                        valid_names.append(me['url'])
-                        if 'thumb' in me:
-                            field[1][me['url']] = Proxy.Preview(HTTP.Request(me['thumb']).content, sort_order=idx+1)
-                        else:
-                            field[1][me['url']] = Proxy.Preview(HTTP.Request(me['url']).content, sort_order=idx+1)
-                    field[1].validate_keys(valid_names)
-
-            value = self.get(data, 'extras', [])
-            if len(value) > 0:
-                for extra in value:
-                    mode = self.get(extra, 'mode', None)
-                    extra_type = self.get(extra, 'type', 'trailer')
-                    extra_class = self.extra_map[extra_type.lower()]
-                    url = 'sjva://sjva.me/playvideo/%s|%s' % (mode, extra.get('param'))
-                    metadata.extras.add(
-                        extra_class(
-                            url=url, 
-                            title=self.change_html(extra.get('title', '')),
-                            originally_available_at = Datetime.ParseDate(self.get(extra, 'originally_available_at', '1900-12-31')).date(),
-                            thumb=self.get(extra, 'thumb', '')
-                        )
-                    )
+            self.set_data_media(metadata, data, 'posters', is_primary)
+            self.set_data_media(metadata, data, 'art', is_primary)
+            self.set_data_media(metadata, data, 'themes', is_primary)
+            self.set_data_extras(metadata, data, 'extras', is_primary)
                 
-            Log(media)
             index_list = [index for index in media.seasons]
             index_list = sorted(index_list)
-            Log('11111111111111111111111111111111111')
-            Log(index_list)
 
             for media_season_index in index_list:
                 Log('media_season_index is %s', media_season_index)
+                Log('media_season_index is %s', type(media_season_index))
                 if media_season_index == '0':
                     continue
                 metadata_season = metadata.seasons[media_season_index]
-                Log('22222222222222222')
-                Log(metadata_season)
-                Log(metadata_season.title)
-
                 if str(media_season_index) not in data['seasons']:
                     continue
                 data_season = data['seasons'][str(media_season_index)]
-                Log(self.d(data_season))
-
                 value = self.get(data_season, 'title', None)
                 if value is not None:
                     #metadata_season.title = value
@@ -187,128 +148,33 @@ class ModuleShowYaml(AgentBase):
                     #metadata_season.summary = value
                     self.set_season_info_by_web(media, media_season_index, summary=value)
 
-                field_list = [
-                    ['posters', metadata_season.posters],
-                    ['art', metadata_season.art],
-                ]
-                for field in field_list:
-                    value = self.get_media_list(data_season, field[0])
-                    if len(value) > 0:
-                        valid_names = []
-                        for idx, me in enumerate(value):
-                            valid_names.append(me['url'])
-                            if 'thumb' in me:
-                                field[1][me['url']] = Proxy.Preview(HTTP.Request(me['thumb']).content, sort_order=idx+1)
-                            else:
-                                field[1][me['url']] = Proxy.Preview(HTTP.Request(me['url']).content, sort_order=idx+1)
-                        field[1].validate_keys(valid_names)
-
-                value = self.get(data_season, 'extras', [])
-                if len(value) > 0:
-                    for extra in value:
-                        mode = self.get(extra, 'mode', None)
-                        extra_type = self.get(extra, 'type', 'trailer')
-                        extra_class = self.extra_map[extra_type.lower()]
-                        url = 'sjva://sjva.me/playvideo/%s|%s' % (mode, extra.get('param'))
-                        metadata_season.extras.add(
-                            extra_class(
-                                url=url, 
-                                title=self.change_html(extra.get('title', '')),
-                                originally_available_at = Datetime.ParseDate(self.get(extra, 'originally_available_at', '1900-12-31')).date(),
-                                thumb=self.get(extra, 'thumb', '')
-                            )
-                        )
-
-
+                self.set_data_media(metadata_season, data_season, 'posters', is_primary)
+                self.set_data_media(metadata_season, data_season, 'art', is_primary)
+                self.set_data_extras(metadata_season, data_season, 'extras', is_primary)
 
 
                 for media_episode_index in media.seasons[media_season_index].episodes:
                     metadata_episode = metadata.seasons[media_season_index].episodes[media_episode_index]
-                    Log(metadata_episode)
-                    Log(metadata_episode.index)
-                    Log(media_episode_index)
-
-                    
+                                        
                     if 'episodes' not in data_season or str(media_episode_index) not in data_season['episodes']:
                         continue
 
                     data_episode = data_season['episodes'][str(media_episode_index)]
                     Log(self.d(data_episode))
-                    
 
-                    value = self.get(data_episode, 'title', None)
-                    if value is not None:
-                        metadata_episode.title = value
-                        
-                    value = self.get(data_episode, 'summary', None)
-                    if value is not None:
-                        metadata_episode.summary = value
+                    self.set_data(metadata_episode, data_episode, 'title', is_primary)
+                    self.set_data(metadata_episode, data_episode, 'summary', is_primary)
+                    self.set_data(metadata_episode, data_episode, 'originally_available_at', is_primary)
 
+                    self.set_data_person(metadata_episode, data, 'writers', is_primary)
+                    self.set_data_person(metadata_episode, data, 'directors', is_primary)
 
-                    value = self.get(data_episode, 'originally_available_at', None)
-                    if value is not None:
-                        metadata.originally_available_at = Datetime.ParseDate(value).date()
-
-
-                    field_list = [
-                        ['writers', metadata_episode.writers],
-                        ['directors', metadata_episode.directors],
-                        #['producers', metadata_episode.producers],
-                        #['guest_stars', metadata_episode.guest_stars],
-                    ]
-                    for field in field_list:
-                        value = self.get_person_list(data, field[0])
-                        if len(value) > 0:
-                            #field[1].clear()
-                            for person in value:
-                                meta_person = field[1].new()
-                                meta_person.name = self.get(person, 'name', None)
-                                meta_person.role = self.get(person, 'role', None)
-                                meta_person.photo = self.get(person, 'photo', None)
-
-
-
-                    field_list = [
-                        ['thumbs', metadata_episode.thumbs],
-                    ]
-                    for field in field_list:
-                        value = self.get_media_list(data_episode, field[0])
-                        if len(value) > 0:
-                            valid_names = []
-                            for idx, me in enumerate(value):
-                                valid_names.append(me['url'])
-                                if 'thumb' in me:
-                                    field[1][me['url']] = Proxy.Preview(HTTP.Request(me['thumb']).content, sort_order=idx+1)
-                                else:
-                                    field[1][me['url']] = Proxy.Preview(HTTP.Request(me['url']).content, sort_order=idx+1)
-                            field[1].validate_keys(valid_names)
-
-                    value = self.get(data_episode, 'extras', [])
-                    if len(value) > 0:
-                        for extra in value:
-                            mode = self.get(extra, 'mode', None)
-                            extra_type = self.get(extra, 'type', 'trailer')
-                            extra_class = self.extra_map[extra_type.lower()]
-                            url = 'sjva://sjva.me/playvideo/%s|%s' % (mode, extra.get('param'))
-                            metadata_episode.extras.add(
-                                extra_class(
-                                    url=url, 
-                                    title=self.change_html(extra.get('title', '')),
-                                    originally_available_at = Datetime.ParseDate(self.get(extra, 'originally_available_at', '1900-12-31')).date(),
-                                    thumb=self.get(extra, 'thumb', '')
-                                )
-                            )
-
-
-
-
-
-
-
-
+                    self.set_data_media(metadata_episode, data_episode, 'thumbs', is_primary)
+                    self.set_data_extras(metadata_episode, data_episode, 'extras', is_primary)
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
+
 
 
     def set_season_info_by_web(self, media, media_season_index, title=None, summary=None):

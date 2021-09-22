@@ -469,12 +469,21 @@ class AgentBase(object):
         else:
             if type(ret) != type([]):
                 tmp = []
-                for value in ret.split(','):
-                    tmp.append({'url':value.strip()})
+                insert_index = -1
+                for idx, value in enumerate(ret.split(',')):
+                    if value.startswith('http'):
+                        tmp.append({'url':value.strip()})
+                        insert_index = idx
+                    else:
+                        if insert_index > -1:
+                            tmp[insert_index]['url'] = '%s,%s' % (tmp[insert_index]['url'], value)
                 ret = tmp
         return ret 
 
-
+    # 포인터가 아니다. 변수의 값이 넘어와버린다
+    # setattr로 클래스 변수 값을 셋한다.
+    # 그런데 기본형(string, int)이 아닌 것들은 포인터처럼 처리..
+    # set_data만 setattr로.. 나머지는 getattr로 변수주소를 받아 처리
     def set_data(self, meta, data, field, is_primary):
         try:
             value = self.get(data, field, None)
@@ -485,9 +494,10 @@ class AgentBase(object):
                     value = Datetime.ParseDate(value).date()
                 elif field in ['rating', 'audience_rating']:
                     value = float(value)
-                meta = value
+                setattr(meta, field, value)
             elif is_primary:
-                meta = None
+                #meta = None
+                setattr(meta, field, None)
         except Exception as exception: 
             Log('Exception:%s', exception)
             Log(traceback.format_exc())    
@@ -495,6 +505,7 @@ class AgentBase(object):
 
     def set_data_list(self, meta, data, field, is_primary):
         try:
+            meta = getattr(meta, field)
             value = self.get_list(data, field)
             if len(value) > 0:
                 meta.clear()
@@ -509,6 +520,7 @@ class AgentBase(object):
 
     def set_data_person(self, meta, data, field, is_primary):
         try:
+            meta = getattr(meta, field)
             value = self.get_person_list(data, field)
             if len(value) > 0:
                 meta.clear()
@@ -526,6 +538,7 @@ class AgentBase(object):
 
     def set_data_media(self, meta, data, field, is_primary):
         try:
+            meta = getattr(meta, field)
             value = self.get_media_list(data, field)
             if len(value) > 0:
                 valid_names = []
@@ -546,6 +559,7 @@ class AgentBase(object):
 
     def set_data_reviews(self, meta, data, field, is_primary):
         try:
+            meta = getattr(meta, field)
             value = self.get(data, field, [])
             if len(value) > 0:
                 meta.clear()
@@ -565,6 +579,7 @@ class AgentBase(object):
 
     def set_data_extras(self, meta, data, field, is_primary):
         try:
+            meta = getattr(meta, field)
             value = self.get(data, field, [])
             if len(value) > 0:
                 for extra in value:
@@ -581,8 +596,9 @@ class AgentBase(object):
                         )
                     )
             elif is_primary:
-                Log(meta)
-                meta.clear()
+                #Log(meta)
+                #meta.clear()
+                pass
         except Exception as exception: 
             Log('Exception:%s', exception)
             Log(traceback.format_exc())

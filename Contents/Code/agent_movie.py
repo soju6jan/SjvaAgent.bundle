@@ -27,8 +27,6 @@ class AgentMovie(Agent.Movies):
         key = AgentBase.get_key(media)
         Log('Key : %s', key)
         ret = self.instance_list['Y'].search(results, media, lang, manual)
-        Log('2222222222222222')
-        Log(ret)
         if ret or key == 'Y':
             return
         self.instance_list[key].search(results, media, lang, manual)
