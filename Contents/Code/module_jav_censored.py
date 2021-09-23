@@ -100,7 +100,7 @@ class ModuleJavCensoredBase(AgentBase):
 
         ProxyClass = Proxy.Preview 
         landscape = None
-        if 'thumb' in data and data['thumbs'] is not None:
+        if 'thumb' in data and data['thumb'] is not None:
             for item in data['thumb']:
                 if item['aspect'] == 'poster':
                     try: metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
