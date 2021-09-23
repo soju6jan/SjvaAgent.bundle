@@ -65,19 +65,26 @@ class ModuleJavCensoredBase(AgentBase):
                 self.save_info(media, data)
   
         #Log(json.dumps(data, indent=4))
-        metadata.title = self.change_html(data['title'])
-        metadata.original_title = metadata.title_sort = data['originaltitle']
+        if 'title' in data and data['title'] is not None:
+            metadata.title = self.change_html(data['title'])
+        if 'originaltitle' in data and data['originaltitle'] is not None:
+            metadata.original_title = metadata.title_sort = data['originaltitle']
         try: metadata.year = data['year']
         except: pass
         try: metadata.duration = data['runtime']*60
         except: pass
-        metadata.studio = data['studio']
-        metadata.summary = self.change_html(data['plot'])
+        if 'studio' in data and data['studio'] is not None:
+            metadata.studio = data['studio']
+        if 'plot' in data and data['plot'] is not None:
+            metadata.summary = self.change_html(data['plot'])
         if 'premiered' in data and data['premiered'] is not None and len(data['premiered']) == 10 and data['premiered'] != '0000-00-00':
             metadata.originally_available_at = Datetime.ParseDate(data['premiered']).date()
-        metadata.countries = data['country']
-        metadata.tagline = self.change_html(data['tagline'])
-        metadata.content_rating = data['mpaa']
+        if 'country' in data and data['country'] is not None:
+            metadata.countries = data['country']
+        if 'tagline' in data and data['tagline'] is not None:
+            metadata.tagline = self.change_html(data['tagline'])
+        if 'mpaa' in data and data['mpaa'] is not None:
+            metadata.content_rating = data['mpaa']
         try:
             if data['ratings'] is not None and len(data['ratings']) > 0:
                 if data['ratings'][0]['max'] == 5:
@@ -93,35 +100,37 @@ class ModuleJavCensoredBase(AgentBase):
 
         ProxyClass = Proxy.Preview 
         landscape = None
-        for item in data['thumb']:
-            if item['aspect'] == 'poster':
-                try: metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
-                except: pass
-            if item['aspect'] == 'landscape':
-                landscape = item['value']
-                try: metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
+        if 'thumb' in data and data['thumbs'] is not None:
+            for item in data['thumb']:
+                if item['aspect'] == 'poster':
+                    try: metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
+                    except: pass
+                if item['aspect'] == 'landscape':
+                    landscape = item['value']
+                    try: metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=10)
+                    except: pass
+
+        if 'fanart' in data and data['fanart'] is not None:
+            for item in data['fanart']:
+                try: metadata.art[item] = ProxyClass(HTTP.Request(item).content)
                 except: pass
 
-        for item in data['fanart']:
-            try: metadata.art[item] = ProxyClass(HTTP.Request(item).content)
-            except: pass
-
-        if data['genre'] is not None:
+        if 'genre' in data and data['genre'] is not None:
             metadata.genres.clear()
             for item in data['genre']:
                 metadata.genres.add(item)
 
-        if data['tag'] is not None:
+        if 'tag' in data and data['tag'] is not None:
             metadata.collections.clear()
             for item in data['tag']:
                 metadata.collections.add(self.change_html(item))
 
-        if data['director'] is not None:
+        if 'director' in data and data['director'] is not None:
             metadata.directors.clear()
             meta_director = metadata.directors.new()
             meta_director.name = data['director']
 
-        if data['actor'] is not None:
+        if 'actor' in data and data['actor'] is not None:
             metadata.roles.clear()
             for item in data['actor']:
                 actor = metadata.roles.new()

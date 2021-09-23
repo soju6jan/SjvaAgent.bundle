@@ -8,7 +8,7 @@ try:
     import logging.handlers
     logger = logging.getLogger('sjva_audiobook')
     logger.setLevel(logging.DEBUG) 
-    formatter = logging.Formatter(u'[%(asctime)s|%(levelname)s] : %(message)s')
+    formatter = logging.Formatter(u'[%(asctime)s|%(levelname)s|%(filename)s|%(lineno)d] : %(message)s')
     file_max_bytes = 10 * 1024 * 1024 
     filename = os.path.join(os.path.dirname( os.path.abspath( __file__ ) ), '../../', 'Logs', 'sjva.scanner.audiobook.log')
     #fileHandler = logging.FileHandler(filename, encoding='utf8')

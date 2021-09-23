@@ -1,4 +1,13 @@
 # -*- coding: UTF-8 -*-
+"""
+version : 2021-09-23
+
+changelog
+ - 2021-09-23 : episode_regexps '회화' unicode가 아니라서 잘못 처리되는 문제 수정
+
+"""
+
+
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -9,7 +18,7 @@ import time, json, traceback, io
 
 episode_regexps = [
     r'\.?([sS](?P<season>[0-9]{1,2}))?[eE](?P<ep>[0-9]{1,4})',
-    r'(?P<ep>\d{1,4})[회화]',
+    ur'(?P<ep>\d{1,4})[회화]',
 ]
 
 date_regexps = [
@@ -22,7 +31,7 @@ try:
     import logging.handlers
     logger = logging.getLogger('sjva_ktv')
     logger.setLevel(logging.DEBUG) 
-    formatter = logging.Formatter(u'[%(asctime)s|%(levelname)s] : %(message)s')
+    formatter = logging.Formatter(u'[%(asctime)s|%(levelname)s|%(filename)s|%(lineno)d] : %(message)s')
     file_max_bytes = 10 * 1024 * 1024 
     filename = os.path.join(os.path.dirname( os.path.abspath( __file__ ) ), '../../', 'Logs', 'sjva.scanner.ktv.log')
     fileHandler = logging.handlers.RotatingFileHandler(filename=filename, maxBytes=file_max_bytes, backupCount=5, encoding='utf8')
@@ -81,6 +90,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     tv_show.display_offset = 0
                     tv_show.parts.append(i)
                     mediaList.append(tv_show)
+                    logger.debug(type(tv_show))
                     logger.debug('  - APPEND by episode: %s' % tv_show)
                     tempDone = True
                     break
