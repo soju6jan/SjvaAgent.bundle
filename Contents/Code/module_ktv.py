@@ -17,7 +17,7 @@ class ModuleKtv(AgentBase):
             if match:
                 return match.group('date')
         except Exception as e: 
-            Log('Exception:%s', e)
+            Log('Exception:%s', e) 
             Log(traceback.format_exc())
 
 
