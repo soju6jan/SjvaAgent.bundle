@@ -232,7 +232,7 @@ class AgentBase(object):
                     if section_id in section_id_list:
                         tmp = os.path.splitext(os.path.basename(filename))
                         code = tmp[0].split(' ')[0]
-                        if code[-2] == 'd' and cdoe [-3] == 'c':
+                        if code[-2] == 'd' and code [-3] == 'c':
                             code = code[:-3].strip(' .-')
                         ret = os.path.join(os.path.dirname(filename), '%s.json' % code)
                     else:
@@ -406,7 +406,7 @@ class AgentBase(object):
                             if os.path.exists(yaml_filepath):
                                 return yaml_filepath
                             code = tmp[0].split(' ')[0]
-                            if code[-2] == 'd' and cdoe [-3] == 'c':
+                            if code[-2] == 'd' and code [-3] == 'c':
                                 code = code[:-3].strip(' .-')
                             yaml_filepath = os.path.join(folderpath, '%s.yaml' % code)
                             if os.path.exists(yaml_filepath):

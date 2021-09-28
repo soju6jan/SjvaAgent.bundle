@@ -40,5 +40,12 @@
 		"label": "JavXXX 중 한 폴더에 여러 품번이 있는 섹션 ID 목록. (이 경우 필요시 파일명.json 사용)",
 		"type": "text",
 		"default": ""
+	},
+	{
+		"id": "jav_dvd_search_all",
+		"label": "JAV DVD로 통합 사용. (검색 실패시 AMA, FC2 순으로 시도)",
+		"type": "bool",
+		"option": "True",
+		"default": "True"
 	}
 ]

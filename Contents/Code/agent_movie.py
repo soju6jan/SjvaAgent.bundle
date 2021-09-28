@@ -29,7 +29,11 @@ class AgentMovie(Agent.Movies):
         ret = self.instance_list['Y'].search(results, media, lang, manual)
         if ret or key == 'Y':
             return
-        self.instance_list[key].search(results, media, lang, manual)
+        ret = self.instance_list[key].search(results, media, lang, manual)
+        if ret == False and key == 'C' and Prefs['jav_dvd_search_all']:
+            ret = self.instance_list['D'].search(results, media, lang, manual)
+            if ret == False:
+                ret = self.instance_list['L'].search(results, media, lang, manual)
         
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)

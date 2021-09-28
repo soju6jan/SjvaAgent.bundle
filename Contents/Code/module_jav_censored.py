@@ -30,7 +30,7 @@ class ModuleJavCensoredBase(AgentBase):
             code = media.name
             meta = MetadataSearchResult(id=code, name=code, year=1900, score=100, thumb="", lang=lang)
             results.Append(meta)
-            return
+            return True
 
 
         if self.is_read_json(media):
@@ -41,7 +41,7 @@ class ModuleJavCensoredBase(AgentBase):
                 if info_json is not None:
                     meta = MetadataSearchResult(id=info_json['code'], name=info_json['title'], year=info_json['year'], score=100, thumb="", lang=lang)
                     results.Append(meta)
-                    return
+                    return True
 
         data = self.send_search(self.module_name, keyword, manual)
         for item in data:
@@ -56,6 +56,9 @@ class ModuleJavCensoredBase(AgentBase):
             meta.summary = self.change_html(item['title_ko'])
             meta.type = "movie"
             results.Append(meta) 
+        if len(data) > 0 and data[0]['score'] >= 80:
+            return True
+        return False
 
 
 
@@ -163,7 +166,7 @@ class ModuleJavCensoredDvd(ModuleJavCensoredBase):
     def search(self, results, media, lang, manual):
         keyword = self.get_search_keyword(media, manual, from_file=True)
         keyword = keyword.replace(' ', '-')
-        self.base_search(results, media, lang, manual, keyword)
+        return self.base_search(results, media, lang, manual, keyword)
  
 
     def update(self, metadata, media, lang):
@@ -176,7 +179,7 @@ class ModuleJavCensoredAma(ModuleJavCensoredBase):
     def search(self, results, media, lang, manual):
         keyword = self.get_search_keyword(media, manual, from_file=True)
         keyword = keyword.replace(' ', '-')
-        self.base_search(results, media, lang, manual, keyword)
+        return self.base_search(results, media, lang, manual, keyword)
 
     def update(self, metadata, media, lang):
         self.base_update(metadata, media, lang)
@@ -188,7 +191,7 @@ class ModuleJavFc2(ModuleJavCensoredBase):
     def search(self, results, media, lang, manual):
         keyword = self.get_search_keyword(media, manual, from_file=True)
         keyword = keyword.replace(' ', '-')
-        self.base_search(results, media, lang, manual, keyword)
+        return self.base_search(results, media, lang, manual, keyword)
 
     def update(self, metadata, media, lang):
         self.base_update(metadata, media, lang)
