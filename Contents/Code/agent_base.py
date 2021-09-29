@@ -486,6 +486,7 @@ class AgentBase(object):
     # set_data만 setattr로.. 나머지는 getattr로 변수주소를 받아 처리
     def set_data(self, meta, data, field, is_primary):
         try:
+            Log('set_data : %s', field)
             value = self.get(data, field, None)
             if value is not None:
                 if field == 'title_sort':
@@ -494,9 +495,10 @@ class AgentBase(object):
                     value = Datetime.ParseDate(value).date()
                 elif field in ['rating', 'audience_rating']:
                     value = float(value)
+                elif field == 'year':
+                    value = int(value)
                 setattr(meta, field, value)
             elif is_primary:
-                #meta = None
                 setattr(meta, field, None)
         except Exception as exception: 
             Log('Exception:%s', exception)

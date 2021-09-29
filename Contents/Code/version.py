@@ -1,6 +1,9 @@
-VERSION = '2021.09.26'
+VERSION = '2021.09.29'
 
 """
+2021.09.29
+ - movie year bug fix
+ 
 2021.09.26
  - JAV DVD로 통합 사용. (검색 실패시 AMA, FC2 순으로 시도)
 
