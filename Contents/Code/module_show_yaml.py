@@ -10,9 +10,9 @@ class ModuleShowYaml(AgentBase):
         try:
             filepath = self.get_yaml_filepath(media, 'show')
             Log('YAML : %s', filepath)
-            if filepath is None:
+            if filepath['show'] is None:
                 return False
-            data = yaml.load(io.open(filepath), Loader=yaml.BaseLoader)
+            data = yaml.load(io.open(filepath['show']), Loader=yaml.BaseLoader)
             Log(self.d(data))
             is_primary = self.get(data, 'primary', 'false')
             if is_primary != 'true':
@@ -45,7 +45,7 @@ class ModuleShowYaml(AgentBase):
 
     # 다른 모듈에서 처리한 이후 있는 값들만 덮어씌움.
     def update(self, metadata, media, lang, is_primary=True):
-        try:
+        try: 
             filepath_list = self.get_yaml_filepath(media, 'show')
             Log('YAML show : %s', filepath_list)
             if filepath_list['show'] is None and filepath_list['seasons'] == False:
