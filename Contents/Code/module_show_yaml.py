@@ -20,8 +20,11 @@ class ModuleShowYaml(AgentBase):
             timestamp = int(time.time())
             posters = self.get_media_list(data, 'posters')
             thumb = posters[0]['url'] if posters else ''
+            code = self.get(data, 'code', 'YS%s' % timestamp)
+            if code.startswith('YS'):
+                code = 'YS%s' % code
             meta = MetadataSearchResult(
-                id=self.get(data, 'code', 'YM%s' % timestamp), 
+                id=code, 
                 name=self.get(data, 'title', u'제목 - %s' % timestamp), 
                 year=self.get(data, 'year', ''), 
                 score=100, 

@@ -1,6 +1,9 @@
-VERSION = '2021.09.30'
+VERSION = '2021.10.01'
 
 """
+2021.10.01
+ - yaml code startswith 체크
+ 
 2021.09.29
  - movie year bug fix
  
