@@ -1,6 +1,10 @@
-VERSION = '2021.10.01'
+VERSION = '2021.10.04'
 
 """
+2021.10.04
+ - yaml music 추가
+ - yaml dummy agent 추가 : yaml 이외는 다른 처리를 하고 싶지 않을 때
+
 2021.10.01
  - yaml code startswith 체크
  

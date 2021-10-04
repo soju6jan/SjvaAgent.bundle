@@ -4,7 +4,7 @@ from .agent_base import AgentBase
 from .module_jav_censored import ModuleJavCensoredDvd, ModuleJavCensoredAma, ModuleJavFc2
 from .module_ott_show import ModuleOttShow
 from .module_movie import ModuleMovie
-from .module_movie_yaml import ModuleMovieYaml
+from .module_yaml_movie import ModuleYamlMovie
 
 
 class AgentMovie(Agent.Movies):
@@ -20,7 +20,7 @@ class AgentMovie(Agent.Movies):
         'L' : ModuleJavFc2(), 
         'P' : ModuleOttShow(),
         'M' : ModuleMovie(), 
-        'Y' : ModuleMovieYaml(),
+        'Y' : ModuleYamlMovie(),
     }
 
     def search(self, results, media, lang, manual):
@@ -38,6 +38,7 @@ class AgentMovie(Agent.Movies):
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
-        self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
+        if metadata.id[0] != 'Y':
+            self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
 
          

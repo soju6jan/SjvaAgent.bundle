@@ -29,7 +29,8 @@ class AgentBase(object):
         # 오디오북?
         'com.plexapp.agents.sjva_agent_audiobook' : 'B',            # B : 오디오북
         'com.plexapp.agents.sjva_agent_audiobook_json' : 'J',       # Y : 오디오북 yaml
-        # Y : yaml
+        
+        'com.plexapp.agents.sjva_agent_yaml' : 'Y',                 # Y : yaml
     }
 
     extra_map = {
@@ -40,7 +41,12 @@ class AgentBase(object):
         'sceneorsample' : SceneOrSampleObject,
         'featurette' : FeaturetteObject,
         'short' : ShortObject,
-        'other' : OtherObject
+        'other' : OtherObject,
+
+        'musicvideo' : MusicVideoObject,
+        'livemusicvideo' : LiveMusicVideoObject,
+        'lyricmusicvideo' : LyricMusicVideoObject,
+        'concertvideo' : ConcertVideoObject,
     }
     
     token = None
@@ -429,6 +435,25 @@ class AgentBase(object):
                             if os.path.exists(season_yaml_filepath):
                                 filepath_list['seasons'].append(season_yaml_filepath)
                     return filepath_list
+            elif content_type == 'album':
+                data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
+                filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+                yaml_filepath = os.path.join(os.path.dirname(filename), 'album.yaml')
+                if os.path.exists(yaml_filepath):
+                    return yaml_filepath
+            elif content_type == 'artist':
+                data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % data['MediaContainer']['Metadata'][0]['Children']['Metadata'][0]['ratingKey'])
+                filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+                yaml_filepath = os.path.join(os.path.dirname(filename), 'artist.yaml')
+                Log('bbbbbbbbbbbbbbbbbbbbbbbbbbbbb')
+                Log(yaml_filepath)
+                if os.path.exists(yaml_filepath):
+                    return yaml_filepath
+                yaml_filepath = os.path.join(os.path.dirname(os.path.dirname(filename)), 'artist.yaml')
+                if os.path.exists(yaml_filepath):
+                    return yaml_filepath
+
+
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
@@ -439,6 +464,16 @@ class AgentBase(object):
         ret = data.get(field, None)
         if ret is None or ret == '':
             ret = default
+        return ret
+    
+    def get_bool(self, data, field, default):
+        ret = data.get(field, None)
+        if ret is None or ret == '':
+            ret = str(default)
+        if ret.lower() in ['true']:
+            return True
+        elif ret.lower() in ['false']:
+            return False
         return ret
     
     def get_list(self, data, field):
@@ -491,7 +526,7 @@ class AgentBase(object):
             if value is not None:
                 if field == 'title_sort':
                     value = unicodedata.normalize('NFKD', value)
-                elif field == 'originally_available_at':
+                elif field in ['originally_available_at', 'available_at']:
                     value = Datetime.ParseDate(value).date()
                 elif field in ['rating', 'audience_rating']:
                     value = float(value)
@@ -553,7 +588,7 @@ class AgentBase(object):
                 meta.validate_keys(valid_names)
             elif is_primary:
                 meta.validate_keys([])
-            
+            Log(meta)
 
         except Exception as exception: 
             Log('Exception:%s', exception)
@@ -587,7 +622,7 @@ class AgentBase(object):
                 for extra in value:
                     mode = self.get(extra, 'mode', None)
                     extra_type = self.get(extra, 'type', 'trailer')
-                    extra_class = self.extra_map[extra_type]
+                    extra_class = self.extra_map[extra_type.lower()]
                     url = 'sjva://sjva.me/playvideo/%s|%s' % (mode, extra.get('param'))
                     meta.add(
                         extra_class(
@@ -597,10 +632,12 @@ class AgentBase(object):
                             thumb=self.get(extra, 'thumb', '')
                         )
                     )
+                    Log('gggggggggggggggggggggggggggggggggggggg2222222222')
             elif is_primary:
                 #Log(meta)
                 #meta.clear()
                 pass
+            Log('gggggggggggggggggggggggggggggggggggggg')
         except Exception as exception: 
             Log('Exception:%s', exception)
             Log(traceback.format_exc())

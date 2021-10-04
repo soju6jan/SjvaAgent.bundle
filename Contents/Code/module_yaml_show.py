@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import os, traceback, json, urllib, re, unicodedata, random, time, io, urllib2
-from .agent_base import AgentBase, PutRequest
+from .agent_base import PutRequest
+from .module_yaml_base import ModuelYamlBase
 import yaml
 
-class ModuleShowYaml(AgentBase):
-    module_name = 'show_yaml'
+class ModuleYamlShow(ModuelYamlBase):
+    module_name = 'yaml_show'
     
     def search(self, results, media, lang, manual, **kwargs):
         try:
@@ -21,7 +22,7 @@ class ModuleShowYaml(AgentBase):
             posters = self.get_media_list(data, 'posters')
             thumb = posters[0]['url'] if posters else ''
             code = self.get(data, 'code', 'YS%s' % timestamp)
-            if code.startswith('YS'):
+            if not code.startswith('YS'):
                 code = 'YS%s' % code
             meta = MetadataSearchResult(
                 id=code, 

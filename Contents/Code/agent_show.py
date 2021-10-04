@@ -3,7 +3,7 @@ import os, traceback, json, urllib, re, unicodedata
 from .agent_base import AgentBase
 from .module_ktv import ModuleKtv
 from .module_ftv import ModuleFtv
-from .module_show_yaml import ModuleShowYaml
+from .module_yaml_show import ModuleYamlShow
 
 class AgentShow(Agent.TV_Shows):
     name = "SJVA 설정"
@@ -15,7 +15,7 @@ class AgentShow(Agent.TV_Shows):
     instance_list = {
         'K' : ModuleKtv(), 
         'F' : ModuleFtv(), 
-        'Y' : ModuleShowYaml(),
+        'Y' : ModuleYamlShow(),
     }
 
     def search(self, results, media, lang, manual):
@@ -33,7 +33,8 @@ class AgentShow(Agent.TV_Shows):
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
-        self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
+        if metadata.id[0] != 'Y':
+            self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
         import local_tv_extras
         local_tv_extras.update(metadata, media)
 

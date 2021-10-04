@@ -24,32 +24,33 @@ def kakao(content_id):
 @route('/wavve') 
 def wavve(sjva_url):
     try:
-        #autoAdjustQuality=0&hasMDE=1&location=lan&mediaBufferSize=74944
-        #content_id = '414068276'
-        Log('111111111111111111111')
-        Log(sjva_url)
         data = JSON.ObjectFromURL(sjva_url)
         url = data['url']
-        Log('url : %s', url)
         data = JSON.ObjectFromURL(url)
-        Log(data)
-        #video_url = data['playurl'].replace('chunklist5000.m3u8', '5000/chunklist.m3u8')
         video_url = data['playurl']
-        Log('mmmmmmmmmmmmmmmmmmmmmmmmmmm')
-        Log(video_url)
-        return Redirect(video_url)
-
-        #https://vod.cdn.wavve.com/hls/M01/M_1003704100074100000.1/2/chunklist5000.m3u8?authtoken=MwqNqlFFcEaupkQpVUA-IEHhqAPlgeh-Y7pAGdoE9nk5NDEXjKZUz5XMRqiaYcuVO6_SZolp7ebchKtzrU8xeA5-I77dFrcHCEw3C_WxBECY4_2Lp_rwqAHdhUQ57iNYtxTq8xbhGThobXbBij5hXavNkavwZGXIrn66AVWXDEeAIDV_9VIyQiSsrNyhoa06U2QA_u0B1i7BnX3gNBo
-
-
-        #5000/chunklist.m3u8?authtoken=MwqNqlFFcEaupkQpVUA-IEHhqAPlgeh-Y7pAGdoE9nk5NDEXjKZUz5XMRqiaYcuVO6_SZolp7ebchKtzrU8xeA5-I77dFrcHCEw3C_WxBECY4_2Lp_rwqAHdhUQ57iNYtxTq8xbhGThobXbBij5hXavNkavwZGXIrn66AVWXDEeAIDV_9VIyQiSsrNyhoa06U2QA_u0B1i7BnX3gNBo
-
-        return
-        url = 'https://tv.kakao.com/katz/v2/ft/cliplink/{}/readyNplay?player=monet_html5&profile=HIGH&service=kakao_tv&section=channel&fields=seekUrl,abrVideoLocationList&startPosition=0&tid=&dteType=PC&continuousPlay=false&contentType=&{}'.format(content_id, int(time.time()))
-        data = JSON.ObjectFromURL(url)
-        video_url = data['videoLocation']['url']
-        Log('Kakao : %s', video_url)
         return Redirect(video_url)
     except Exception as e: 
         Log('Exception:%s', e)
         Log(traceback.format_exc())
+
+
+
+
+
+@route('/get_lyric') 
+def get_lyric(mode, filename, artist, track):
+    Log('mode : %s  ' % (mode))
+    Log('artist : %s  artist : %s' % (artist, track))
+    lyric = ''
+    if Prefs['server']:
+        try:
+            url = '{ddns}/metadata/api/lyric/get_lyric?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex&apikey={apikey}'.format(ddns=Prefs['server'], mode=mode, filename=urllib.quote(filename.encode('utf8')), artist=urllib.quote(artist.encode('utf8')), track=urllib.quote(track.encode('utf8')), apikey=Prefs['apikey'])
+            data = JSON.ObjectFromURL(url, timeout=5000)
+            Log(data)
+            lyric = data['data'] if data['ret'] == 'success' else data['log']
+        except Exception as e: 
+            Log('Exception:%s', e)
+            lyric = str(traceback.format_exc())
+    Log(lyric)
+    return lyric
+  

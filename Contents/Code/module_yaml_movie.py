@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import os, traceback, json, urllib, re, unicodedata, random, time, io
-from .agent_base import AgentBase
+from .module_yaml_base import ModuelYamlBase
 import yaml
 
-class ModuleMovieYaml(AgentBase):
-    module_name = 'movie_yaml'
+class ModuleYamlMovie(ModuelYamlBase):
+    module_name = 'yaml_movie'
     
     def search(self, results, media, lang, manual, **kwargs):
         try:
@@ -22,7 +22,7 @@ class ModuleMovieYaml(AgentBase):
             posters = self.get_media_list(data, 'posters')
             thumb = posters[0]['url'] if posters else '' 
             code = self.get(data, 'code', 'YM%s' % timestamp)
-            if code.startswith('YM'):
+            if not code.startswith('YM'):
                 code = 'YM%s' % code
             meta = MetadataSearchResult(
                 id=code, 
