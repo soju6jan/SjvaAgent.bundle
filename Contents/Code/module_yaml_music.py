@@ -65,9 +65,8 @@ class ModuleYamlArtist(ModuelYamlBase):
             self.set_data_media(metadata, data, 'art', is_primary)
             self.set_data_media(metadata, data, 'themes', is_primary)
             self.set_data(metadata, data, 'rating', is_primary)
-            #self.set_data(metadata, data, 'rating_image', is_primary)
-            #self.set_data(metadata, data, 'audience_rating', is_primary)
-            #self.set_data(metadata, data, 'audience_rating_image', is_primary)
+            self.set_data_extras(metadata, data, 'extras', is_primary)
+            
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
@@ -79,6 +78,7 @@ class ModuleYamlAlbum(ModuelYamlBase):
     
     def search(self, results, media, lang, manual, **kwargs):
         try:
+            Log(media.title)
             filepath = self.get_yaml_filepath(media, 'album')
             Log('YAML ALBUM: %s', filepath)
             if filepath is None:
@@ -154,7 +154,14 @@ class ModuleYamlAlbum(ModuelYamlBase):
             for index in media.tracks:
                 track_key = media.tracks[index].id or int(index)
                 valid_track_keys.append(track_key)
-                #t = metadata.tracks[track_key]
+                Log(track_key)
+                filename = os.path.splitext(os.path.basename(media.tracks[index].items[0].parts[0].file))[0]
+                Log(filename)
+                t = metadata.tracks[track_key]
+                Log('aaaaaaaaaaaaaaaaaaaaaaaa')
+                Log(t.title)
+                Log(t.artist)
+                
                 #self.set_data(metadata, data, 'extras', is_primary)
                 #t.title = filename.strip(' -._')
                 #t.original_title = data.get('author', '')

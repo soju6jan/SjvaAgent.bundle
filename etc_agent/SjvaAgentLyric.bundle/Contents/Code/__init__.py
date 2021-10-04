@@ -63,7 +63,28 @@ def get_lyric(mode, md5, filename, artist, track):
         lyric = data['data'] if data['ret'] == 'success' else data['log']
     return lyric
 
-
+@route('/get_lyric2') 
+def get_lyric2(mode, track_key):
+    Log('mode : %s  ' % (mode))
+    Log('track_key : %s' % (track_key))
+    lyric = ''
+    if Prefs['server']:
+        try:
+            url = 'http://127.0.0.1:32400/library/metadata/%s' % track_key
+            data = JSON.ObjectFromURL(url, headers={'accept' : 'application/json'})
+            #Log(d(data))
+            artist = data['MediaContainer']['Metadata'][0]['originalTitle']
+            track = data['MediaContainer']['Metadata'][0]['title']
+            filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+            url = '{ddns}/metadata/api/lyric/get_lyric?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex&apikey={apikey}'.format(ddns=Prefs['server'], mode=mode, filename=urllib.quote(filename.encode('utf8')), artist=urllib.quote(artist.encode('utf8')), track=urllib.quote(track.encode('utf8')), apikey=Prefs['apikey'])
+            data = JSON.ObjectFromURL(url, timeout=5000)
+            #Log(d(data))
+            lyric = data['data'] if data['ret'] == 'success' else data['log']
+        except Exception as e: 
+            Log('Exception:%s', e)
+            lyric = str(traceback.format_exc())
+    #Log(lyric)
+    return lyric
 
 def alsong(md5):
     try:
@@ -98,6 +119,7 @@ class SjvaAgentLyric(Agent.Album):
     def search(self, results, media, lang, manual, **kwargs):
         results.Append(MetadataSearchResult(id = 'null', score = 100))
 
+    """
     def update(self, metadata, media, lang):
         valid_keys = defaultdict(list)
         path = None
@@ -128,5 +150,30 @@ class SjvaAgentLyric(Agent.Album):
                     
         for key in metadata.tracks:
             metadata.tracks[key].lyrics.validate_keys(valid_keys[key])
-        
+    """
 
+    def update(self, metadata, media, lang):
+        try:
+            valid_keys = defaultdict(list)
+            path = None
+            for index in media.tracks:
+                track_key = media.tracks[index].id or int(index)
+                Log("트랙 메타데이터 키 : %s", track_key)
+                try:
+                    for idx, mode in enumerate(['lrc', 'txt']):
+                        url = 'http://127.0.0.1:32400/:/plugins/com.plexapp.agents.sjva_agent_lyric/function/get_lyric2?mode={mode}&track_key={track_key}'.format(
+                            mode = mode, 
+                            track_key = track_key
+                        )
+                        metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = mode, sort_order=idx+1)
+                        Log(url)
+                        valid_keys[track_key].append(url)
+                except Exception as e: 
+                    Log('Exception:%s', e)
+                    Log(traceback.format_exc())
+            for key in metadata.tracks:
+                metadata.tracks[key].lyrics.validate_keys(valid_keys[key])
+
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())

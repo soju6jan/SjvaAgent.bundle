@@ -20,3 +20,6 @@ elif tmp == 'Jav Censored Ama':
     from .agent_jav_censored import AgentJavCensored
 """
 
+def d(data):
+    import json
+    return json.dumps(data, indent=4, ensure_ascii=False)

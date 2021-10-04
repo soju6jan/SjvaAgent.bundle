@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, traceback, json, urllib, re, unicodedata, time
 # /:/plugins/com.plexapp.agents.sjva_agent/function/version?X-Plex-Token=%s' % (server_url, server_token)
+from . import d
 
 @route('/version') 
 def version():
@@ -53,4 +54,28 @@ def get_lyric(mode, filename, artist, track):
             lyric = str(traceback.format_exc())
     Log(lyric)
     return lyric
-  
+
+
+
+@route('/get_lyric2') 
+def get_lyric2(mode, track_key):
+    Log('mode : %s  ' % (mode))
+    Log('track_key : %s' % (track_key))
+    lyric = ''
+    if Prefs['server']:
+        try:
+            url = 'http://127.0.0.1:32400/library/metadata/%s' % track_key
+            data = JSON.ObjectFromURL(url, headers={'accept' : 'application/json'})
+            #Log(d(data))
+            artist = data['MediaContainer']['Metadata'][0]['originalTitle']
+            track = data['MediaContainer']['Metadata'][0]['title']
+            filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+            url = '{ddns}/metadata/api/lyric/get_lyric?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex&apikey={apikey}'.format(ddns=Prefs['server'], mode=mode, filename=urllib.quote(filename.encode('utf8')), artist=urllib.quote(artist.encode('utf8')), track=urllib.quote(track.encode('utf8')), apikey=Prefs['apikey'])
+            data = JSON.ObjectFromURL(url, timeout=5000)
+            #Log(d(data))
+            lyric = data['data'] if data['ret'] == 'success' else data['log']
+        except Exception as e: 
+            Log('Exception:%s', e)
+            lyric = str(traceback.format_exc())
+    #Log(lyric)
+    return lyric

@@ -1,6 +1,10 @@
-VERSION = '2021.10.04'
+VERSION = '2021.10.05'
 
 """
+2021.10.05
+ - ftv : 시즌 0도 검색되게
+ - lyric URL 생성시에는 key만 넣고, 실제 정보는 메타에서 가져오도록
+
 2021.10.04
  - yaml music 추가
  - yaml dummy agent 추가 : yaml 이외는 다른 처리를 하고 싶지 않을 때

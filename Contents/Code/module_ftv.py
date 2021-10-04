@@ -80,8 +80,8 @@ class ModuleFtv(AgentBase):
                 #for media_season_index in media.seasons:
                 for media_season_index in index_list:
                     Log('media_season_index is %s', media_season_index)
-                    if media_season_index == '0':
-                        continue
+                    #if media_season_index == '0':
+                    #    continue
                     
                     # 포스터
                     # Get episode data.
