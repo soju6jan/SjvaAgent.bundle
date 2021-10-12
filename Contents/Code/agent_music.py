@@ -72,7 +72,7 @@ class AgentAlbum(Agent.Album):
         need_lyric = self.instance_list[metadata.id[0]].update(metadata, media, lang)
         if metadata.id[0] != 'Y':
             need_lyric = self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
-        if need_lyric:
+        if need_lyric != False:
             Log("가사 탐색")
             self.instance_list['L'].update(metadata, media, lang, is_primary=False)
 

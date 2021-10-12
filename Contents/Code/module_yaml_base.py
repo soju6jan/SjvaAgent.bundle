@@ -65,8 +65,6 @@ class ModuelYamlBase(AgentBase):
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % data['MediaContainer']['Metadata'][0]['Children']['Metadata'][0]['ratingKey'])
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
                 yaml_filepath = os.path.join(os.path.dirname(filename), 'artist.yaml')
-                Log('bbbbbbbbbbbbbbbbbbbbbbbbbbbbb')
-                Log(yaml_filepath)
                 if os.path.exists(yaml_filepath):
                     return yaml_filepath
                 yaml_filepath = os.path.join(os.path.dirname(os.path.dirname(filename)), 'artist.yaml')

@@ -136,8 +136,6 @@ class ModuleYamlShow(ModuelYamlBase):
             for media_season_index in index_list:
                 Log('media_season_index is %s', media_season_index)
                 Log('media_season_index is %s', type(media_season_index))
-                if media_season_index == '0':
-                    continue
                 metadata_season = metadata.seasons[media_season_index]
                 if str(media_season_index) not in data['seasons']:
                     continue

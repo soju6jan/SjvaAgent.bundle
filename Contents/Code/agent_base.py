@@ -25,7 +25,7 @@ class AgentBase(object):
         # A : ani
         'com.plexapp.agents.sjva_agent_ott_show' : 'P',
         'com.plexapp.agents.sjva_agent_movie' : 'M',                # M : 영화
-        'com.plexapp.agents.sjva_agent_music' : 'V',                # V : 앨범, 아티스트 
+        'com.plexapp.agents.sjva_agent_music' : 'S',                # V : 앨범, 아티스트 
         # 오디오북?
         'com.plexapp.agents.sjva_agent_audiobook' : 'B',            # B : 오디오북
         'com.plexapp.agents.sjva_agent_audiobook_json' : 'J',       # Y : 오디오북 yaml

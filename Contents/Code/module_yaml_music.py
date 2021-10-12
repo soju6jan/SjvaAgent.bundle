@@ -126,7 +126,7 @@ class ModuleYamlAlbum(ModuelYamlBase):
             filepath = self.get_yaml_filepath(media, 'album')
             Log(u"앨범 업데이트 : %s", filepath)
             if filepath is None:
-                return False
+                return
             data = yaml.load(io.open(filepath), Loader=yaml.BaseLoader)
             try: Log(self.d(data))
             except: pass
