@@ -40,5 +40,11 @@ class AgentMovie(Agent.Movies):
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
         if metadata.id[0] != 'Y':
             self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
-
-         
+        
+        if self.instance_list['Y'].is_collection_append(media) == False:
+            metadata.collections.clear()
+            Log('collections clear')
+        else:
+            for a in metadata.collections:
+                Log(a)
+     

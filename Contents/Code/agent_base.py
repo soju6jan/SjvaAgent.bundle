@@ -235,7 +235,7 @@ class AgentBase(object):
                     section_id_list = []
                     if Prefs['filename_json'] is not None:
                         section_id_list = Prefs['filename_json'].split(',')
-                    if section_id in section_id_list:
+                    if Prefs['filename_json'] == 'all' or section_id in section_id_list:
                         tmp = os.path.splitext(os.path.basename(filename))
                         code = tmp[0].split(' ')[0]
                         if code[-2] == 'd' and code [-3] == 'c':
@@ -343,10 +343,12 @@ class AgentBase(object):
     
     def is_include_time_info(self, media):
         try:
-            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
-            section_id = str(data['MediaContainer']['librarySectionID'])
             if Prefs['include_time_info'] == 'all':
                 return True
+            if Prefs['include_time_info'] == '' or Prefs['include_time_info'] is None:
+                return False
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+            section_id = str(data['MediaContainer']['librarySectionID'])
             section_id_list = Prefs['include_time_info'].split(',')
             return section_id in section_id_list
         except Exception as e: 
@@ -356,10 +358,12 @@ class AgentBase(object):
 
     def is_read_json(self, media):
         try:
-            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
-            section_id = str(data['MediaContainer']['librarySectionID'])
             if Prefs['read_json'] == 'all':
                 return True
+            if Prefs['read_json'] == '' or Prefs['read_json'] is None:
+                return False
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+            section_id = str(data['MediaContainer']['librarySectionID'])
             section_id_list = Prefs['read_json'].split(',')
             return section_id in section_id_list
         except Exception as e: 
@@ -369,10 +373,12 @@ class AgentBase(object):
 
     def is_write_json(self, media):
         try:
-            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
-            section_id = str(data['MediaContainer']['librarySectionID'])
             if Prefs['write_json'] == 'all':
                 return True
+            if Prefs['write_json'] == '' or Prefs['write_json'] is None:
+                return False
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+            section_id = str(data['MediaContainer']['librarySectionID'])
             section_id_list = Prefs['write_json'].split(',')
             return section_id in section_id_list
         except Exception as e: 
@@ -380,6 +386,22 @@ class AgentBase(object):
             Log(traceback.format_exc())
         return False
     
+    def is_collection_append(self, media):
+        try:
+            if Prefs['collection_disalbed'] == 'all':
+                return False
+            if Prefs['collection_disalbed'] == '' or Prefs['collection_disalbed'] is None:
+                return True
+            section_id_list = Prefs['collection_disalbed'].split(',')
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+            section_id = str(data['MediaContainer']['librarySectionID'])
+            return not (section_id in section_id_list)
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+        return True
+
+
     def d(self, data):
         return json.dumps(data, indent=4, ensure_ascii=False)
     
