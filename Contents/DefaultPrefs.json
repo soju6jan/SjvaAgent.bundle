@@ -53,5 +53,11 @@
 		"label": "컬렉션을 생성하지 않을 섹션 ID 목록 (all이면 모두. 구분자 ,)",
 		"type": "text",
 		"default": ""
+	},
+	{
+		"id": "show_extra_enabled",
+		"label": "쇼에서 파일 부가 영상을 포함할 섹션 ID 목록 (all이면 모두. 구분자 ,)",
+		"type": "text",
+		"default": ""
 	}
 ]

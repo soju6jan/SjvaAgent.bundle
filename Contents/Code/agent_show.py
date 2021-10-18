@@ -35,7 +35,10 @@ class AgentShow(Agent.TV_Shows):
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
         if metadata.id[0] != 'Y':
             self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
-        import local_tv_extras
-        local_tv_extras.update(metadata, media)
+
+        if self.instance_list['Y'].is_show_extra(media):
+            import local_tv_extras
+            local_tv_extras.update(metadata, media)
+        
 
         

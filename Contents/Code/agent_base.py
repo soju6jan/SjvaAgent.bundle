@@ -386,6 +386,21 @@ class AgentBase(object):
             Log(traceback.format_exc())
         return False
     
+    def is_show_extra(self, media):
+        try:
+            if Prefs['show_extra_enabled'] == 'all':
+                return True
+            if Prefs['show_extra_enabled'] == '' or Prefs['show_extra_enabled'] is None:
+                return False
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % media.id)
+            section_id = str(data['MediaContainer']['librarySectionID'])
+            section_id_list = Prefs['show_extra_enabled'].split(',')
+            return section_id in section_id_list
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+        return False
+
     def is_collection_append(self, media):
         try:
             if Prefs['collection_disalbed'] == 'all':
