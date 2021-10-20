@@ -82,29 +82,6 @@ def get_lyric2(mode, track_key):
 
 
 
-@route('/get_lyric2') 
-def get_lyric2(mode, track_key):
-    Log('mode : %s  ' % (mode))
-    Log('track_key : %s' % (track_key))
-    lyric = ''
-    if Prefs['server']:
-        try:
-            url = 'http://127.0.0.1:32400/library/metadata/%s' % track_key
-            data = JSON.ObjectFromURL(url, headers={'accept' : 'application/json'})
-            #Log(d(data))
-            artist = data['MediaContainer']['Metadata'][0]['originalTitle']
-            track = data['MediaContainer']['Metadata'][0]['title']
-            filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
-            url = '{ddns}/metadata/api/lyric/get_lyric?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex&apikey={apikey}'.format(ddns=Prefs['server'], mode=mode, filename=urllib.quote(filename.encode('utf8')), artist=urllib.quote(artist.encode('utf8')), track=urllib.quote(track.encode('utf8')), apikey=Prefs['apikey'])
-            data = JSON.ObjectFromURL(url, timeout=5000)
-            #Log(d(data))
-            lyric = data['data'] if data['ret'] == 'success' else data['log']
-        except Exception as e: 
-            Log('Exception:%s', e)
-            lyric = str(traceback.format_exc())
-    #Log(lyric)
-    return lyric
-
 
 def d(data):
     return json.dumps(data, indent=4, ensure_ascii=False)
@@ -136,16 +113,24 @@ def get_folderpath(key):
             ret['ret'] = 'artist'
             ret['folder'] = os.path.dirname(filename)
         elif content_type == 'movie':
-            filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+            tmp_folders = []
+            for tmp in data['MediaContainer']['Metadata'][0]['Media']:
+                tmp_folder = os.path.dirname(tmp['Part'][0]['file'])
+                if tmp_folder not in tmp_folders:
+                    tmp_folders.append(tmp_folder)
+            ret['folder_count'] = len(tmp_folders)
             ret['ret'] = 'movie'
-            ret['folder'] = os.path.dirname(filename)
-            # filename_json 이라는건 한폴더에 여러 파일이 있다는 의미로 사용. 폴더를 넘기면 모두 받아야하므로 파일만 넘김
+            if len(tmp_folders) == 1:
+                ret['folder'] = tmp_folders[0]
+            else:
+                ret['folder'] = '|'.join(tmp_folders)
             section_id_list = []
             if Prefs['filename_json'] is not None:
                 section_id_list = Prefs['filename_json'].split(',')
             if Prefs['filename_json'] == 'all' or section_id in section_id_list:
                 ret['ret'] = 'movie_one_folder'
-                ret['filename'] = filename
+                ret['filename'] = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+
         elif content_type == 'show':
             if 'Location' in data['MediaContainer']['Metadata'][0]:
                 ret['ret'] = 'show'
