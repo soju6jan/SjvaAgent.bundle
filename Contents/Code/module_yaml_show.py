@@ -13,7 +13,7 @@ class ModuleYamlShow(ModuelYamlBase):
             Log('YAML : %s', filepath)
             if filepath['show'] is None:
                 return False
-            data = yaml.load(io.open(filepath['show']), Loader=yaml.BaseLoader)
+            data = self.yaml_load(filepath['show'])
             Log(self.d(data))
             is_primary = self.get(data, 'primary', 'false')
             if is_primary != 'true':
@@ -58,7 +58,7 @@ class ModuleYamlShow(ModuelYamlBase):
             data = {}
             try:
                 if filepath_list['show'] is not None:
-                    data = yaml.load(io.open(filepath_list['show']), Loader=yaml.BaseLoader)
+                    data = self.yaml_load(filepath_list['show'])
             except Exception as exception: 
                 Log('Exception:%s', exception)
                 Log(traceback.format_exc())  
@@ -78,7 +78,7 @@ class ModuleYamlShow(ModuelYamlBase):
             
             for season_yamlpath in filepath_list['seasons']:
                 try:
-                    tmp = yaml.load(io.open(season_yamlpath), Loader=yaml.BaseLoader)
+                    tmp = self.yaml_load(season_yamlpath)
                     #data['seasons'].append(tmp)
                     if 'index' in tmp:
                         data['seasons'][str(tmp['index'])] = tmp

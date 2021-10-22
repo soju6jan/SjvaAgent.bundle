@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata, time, urllib2
+import os, traceback, json, urllib, re, unicodedata, time, urllib2, io
 from io import open
 from functools import wraps
+import yaml
 
 
 """
@@ -669,18 +670,23 @@ class AgentBase(object):
                             thumb=self.get(extra, 'thumb', '')
                         )
                     )
-                    Log('gggggggggggggggggggggggggggggggggggggg2222222222')
             elif is_primary:
                 #Log(meta)
                 #meta.clear()
                 pass
-            Log('gggggggggggggggggggggggggggggggggggggg')
         except Exception as exception: 
             Log('Exception:%s', exception)
             Log(traceback.format_exc())
 
 
-
+    def yaml_load(self, filepath):
+        #data = self.yaml_load(filepath)
+        #data = yaml.load(io.open(filepath), Loader=yaml.BaseLoader)
+        try: 
+            data = yaml.load(io.open(filepath, encoding='utf-8'), Loader=yaml.BaseLoader)
+        except: 
+            data = yaml.load(io.open(filepath, encoding='euc-kr'), Loader=yaml.BaseLoader)
+        return data
 
 
 

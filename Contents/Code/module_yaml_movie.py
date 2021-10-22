@@ -12,7 +12,7 @@ class ModuleYamlMovie(ModuelYamlBase):
             Log('YAML : %s', filepath)
             if filepath is None:
                 return False
-            data = yaml.load(io.open(filepath), Loader=yaml.BaseLoader)
+            data = self.yaml_load(filepath)
             Log(self.d(data))
             
             is_primary = self.get(data, 'primary', 'false')
@@ -51,7 +51,7 @@ class ModuleYamlMovie(ModuelYamlBase):
             Log('YAML movie : %s', filepath)
             if filepath is None:
                 return False
-            data = yaml.load(io.open(filepath), Loader=yaml.BaseLoader)
+            data = self.yaml_load(filepath)
             try: Log(self.d(data))
             except: pass
             if is_primary:

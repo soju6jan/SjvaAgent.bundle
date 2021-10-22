@@ -12,7 +12,7 @@ class ModuleYamlArtist(ModuelYamlBase):
             Log('YAML artist: %s', filepath)
             if filepath is None:
                 return False
-            data = yaml.load(io.open(filepath), Loader=yaml.BaseLoader)
+            data = self.yaml_load(filepath)
             Log(self.d(data))
             is_primary = self.get(data, 'primary', 'false')
             if is_primary != 'true':
@@ -48,7 +48,7 @@ class ModuleYamlArtist(ModuelYamlBase):
             Log(u"아티스트 업데이트 : %s", filepath)
             if filepath is None:
                 return False
-            data = yaml.load(io.open(filepath), Loader=yaml.BaseLoader)
+            data = self.yaml_load(filepath)
             try: Log(self.d(data))
             except: pass
             self.set_data(metadata, data, 'title', is_primary)
@@ -83,7 +83,7 @@ class ModuleYamlAlbum(ModuelYamlBase):
             Log('YAML ALBUM: %s', filepath)
             if filepath is None:
                 return False
-            data = yaml.load(io.open(filepath), Loader=yaml.BaseLoader)
+            data = self.yaml_load(filepath)
             Log(self.d(data))
             
             is_primary = self.get(data, 'primary', 'false')
@@ -127,7 +127,7 @@ class ModuleYamlAlbum(ModuelYamlBase):
             Log(u"앨범 업데이트 : %s", filepath)
             if filepath is None:
                 return
-            data = yaml.load(io.open(filepath), Loader=yaml.BaseLoader)
+            data = self.yaml_load(filepath)
             try: Log(self.d(data))
             except: pass
             self.set_data(metadata, data, 'title', is_primary)
