@@ -62,7 +62,7 @@ class ModuleFtv(AgentBase):
 
             if self.is_read_json(media):
                 info_json = self.get_info_json(media)
-                if info_json is not None:
+                if info_json is not None and 'show' in info_json:
                     meta_info = info_json['show']
             if meta_info is None:
                 meta_info = self.send_info(self.module_name, metadata.id)

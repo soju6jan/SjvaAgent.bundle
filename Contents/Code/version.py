@@ -1,9 +1,12 @@
-VERSION = '2021.10.21'
+VERSION = '2021.10.24'
 
 """
 2021.10.21
- - yaml load 수정. (feat. 시우지우아빠)
+ -ftv 스튜디어 버그 수정
  
+2021.10.21
+ - yaml load 수정. (feat. 시우지우아빠)
+
 2021.10.20
  - get_folderpath 수정
 
