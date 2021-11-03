@@ -157,8 +157,11 @@ class ModuleFtv(AgentBase):
 
         metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
         metadata.studio = meta_info['studio']
-        if type(meta_info['studio']) == type([]) and len(meta_info['studio'])>0:
-            metadata.studio = meta_info['studio'][0]
+        if type(meta_info['studio']) == type([]):
+            if len(meta_info['studio'])>0:
+                metadata.studio = meta_info['studio'][0]
+            elif len(meta_info['studio']) == 0:
+                metadata.studio = ''
         try: metadata.originally_available_at = Datetime.ParseDate(meta_info['premiered']).date()
         except: pass
         metadata.content_rating = meta_info['mpaa']
