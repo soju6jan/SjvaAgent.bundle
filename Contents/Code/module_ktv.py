@@ -25,13 +25,19 @@ class ModuleKtv(AgentBase):
         try:
             if manual and media.show is not None and media.show.startswith('K'):
                 code, title = media.show.split('|')
-                meta = MetadataSearchResult(id=code, name=title, year='', score=100, thumb="", lang=lang)
-                results.Append(meta)
-                return
-
-            Log('SEARCH : %s' % media.show)
-            keyword = media.show
-            Log('>> %s : %s %s' % (self.module_name, keyword, manual))
+                if code != 'KTV':
+                    meta = MetadataSearchResult(id=code, name=title, year='', score=100, thumb="", lang=lang)
+                    results.Append(meta)
+                    return
+            
+            # KTV|수당영웅
+            if manual and media.show is not None and media.show.startswith('KTV'):
+                code, title = media.show.split('|')
+                keyword = title
+            else:
+                Log('SEARCH : %s' % media.show)
+                keyword = media.show
+                Log('>> %s : %s %s' % (self.module_name, keyword, manual))
             
             use_json = False
             search_data = None
@@ -372,6 +378,8 @@ class ModuleKtv(AgentBase):
                 if media_season_index == '0':
                     continue
                 search_title = media.title.replace(u'[종영]', '')
+                # 2021-11-05
+                search_title = search_title.replace('KTV|', '')
                 search_title = search_title.split('|')[0]
                 search_code = metadata.id            
                 if flag_media_season and 'daum' in search_data and len(search_data['daum']['series']) > 1:
