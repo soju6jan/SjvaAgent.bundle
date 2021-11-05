@@ -31,14 +31,15 @@ class ModuleKtv(AgentBase):
                     return
             
             # KTV|수당영웅
+            Log('SEARCH 0: %s' % media.show)
             if manual and media.show is not None and media.show.startswith('KTV'):
-                code, title = media.show.split('|')
-                keyword = title
+                keyword = media.show.replace('KTV|', '')
+
             else:
                 Log('SEARCH : %s' % media.show)
                 keyword = media.show
                 Log('>> %s : %s %s' % (self.module_name, keyword, manual))
-            
+            Log('KEYWORD : %s', keyword)
             use_json = False
             search_data = None
             search_key = u'search|%s' % keyword
@@ -75,7 +76,7 @@ class ModuleKtv(AgentBase):
                     # 마지막 시즌 ID
                     results.Append(MetadataSearchResult(
                         id=data['series'][-1]['code'], 
-                        name=u'%s | 시리즈' % media.show, 
+                        name=u'%s | 시리즈' % keyword, 
                         year=data['series'][-1]['year'], 
                         score=100, lang=lang)
                     )
@@ -190,7 +191,7 @@ class ModuleKtv(AgentBase):
                 metadata.audience_rating = 0.0
 
         # role
-        metadata.roles.clear()
+        #metadata.roles.clear()
         for item in ['actor', 'director', 'credits']:
             for item in meta_info[item]:
                 actor = metadata.roles.new()
@@ -373,14 +374,15 @@ class ModuleKtv(AgentBase):
             index_list = [index for index in media.seasons]
             index_list = sorted(index_list)
             #for media_season_index in media.seasons:
+            
+            # 2021-11-05
+            metadata.roles.clear()
             for media_season_index in index_list:
                 Log('media_season_index is %s', media_season_index)
                 if media_season_index == '0':
                     continue
                 search_title = media.title.replace(u'[종영]', '')
-                # 2021-11-05
-                search_title = search_title.replace('KTV|', '')
-                search_title = search_title.split('|')[0]
+                search_title = search_title.split('|')[0].strip()
                 search_code = metadata.id            
                 if flag_media_season and 'daum' in search_data and len(search_data['daum']['series']) > 1:
                     try: #사당보다 먼 의정부보다 가까운 3
