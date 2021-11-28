@@ -331,11 +331,15 @@ class AgentBase(object):
             ret = self.get_json_filepath(media)
             # 구드공인 경우 캐시때문에 exists 함수 실패하는 것 같음.
             if ret is not None: #and os.path.exists(ret):
+                Log("info.json 삭제1 %s", ret)
                 os.remove(ret)
                 #time.sleep(2)
         except Exception as e:
             try: 
-                os.system('rm %s' % ret)
+                Log("info.json 삭제2 %s", ret)
+                #os.system('rm %s' % ret)
+                # 2021-11-27 by lapis https://sjva.me/bbs/board.php?bo_table=suggestions&wr_id=1978
+                os.system('rm "%s"' % ret)
             except:
                 pass
             #Log('Exception:%s', e)
