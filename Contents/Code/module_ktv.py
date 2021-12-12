@@ -23,6 +23,13 @@ class ModuleKtv(AgentBase):
 
     def search(self, results, media, lang, manual):
         try:
+            # 2021-12-13 닥터 슬럼프 리메이크 FT105262
+            if manual and media.show is not None and media.show.startswith('FT'):
+                code = media.show
+                meta = MetadataSearchResult(id=code, name=code, year='', score=100, thumb="", lang=lang)
+                results.Append(meta)
+                return
+
             if manual and media.show is not None and media.show.startswith('K'):
                 code, title = media.show.split('|')
                 if code != 'KTV':
