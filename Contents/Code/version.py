@@ -1,6 +1,9 @@
-VERSION = '2021.12.29'
+VERSION = '2021.12.29-2'
 
 """
+2021.12.29-2
+ - JAVALL 관련 수정
+
 2021.12.29
  - JAV Uncensored 검색 추가
  - JAV 전체 검색 추가. JAVALL|검색어

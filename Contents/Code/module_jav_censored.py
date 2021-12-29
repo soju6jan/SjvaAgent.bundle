@@ -19,6 +19,7 @@ class ModuleJavCensoredBase(AgentBase):
                 else:
                     # from_scanner
                     ret = media.name
+            ret = ret.replace(' ', '-').replace('JAVALL|', '')
             return ret
         except Exception as e: 
             Log('Exception:%s', e)
@@ -161,54 +162,26 @@ class ModuleJavCensoredBase(AgentBase):
         return
 
 
-    
+    def search(self, results, media, lang, manual):
+        keyword = self.get_search_keyword(media, manual, from_file=True)
+        return self.base_search(results, media, lang, manual, keyword)
+ 
+    def update(self, metadata, media, lang):
+        self.base_update(metadata, media, lang)
 
 
 
 class ModuleJavCensoredDvd(ModuleJavCensoredBase):
     module_name = 'jav_censored'
-    
-    def search(self, results, media, lang, manual):
-        keyword = self.get_search_keyword(media, manual, from_file=True)
-        keyword = keyword.strip().replace(' ', '-')
-        return self.base_search(results, media, lang, manual, keyword)
- 
-
-    def update(self, metadata, media, lang):
-        self.base_update(metadata, media, lang)
 
 
 class ModuleJavCensoredAma(ModuleJavCensoredBase):
     module_name = 'jav_censored_ama'
-    
-    def search(self, results, media, lang, manual):
-        keyword = self.get_search_keyword(media, manual, from_file=True)
-        keyword = keyword.strip().replace(' ', '-')
-        return self.base_search(results, media, lang, manual, keyword)
-
-    def update(self, metadata, media, lang):
-        self.base_update(metadata, media, lang)
 
 
 class ModuleJavFc2(ModuleJavCensoredBase):
     module_name = 'jav_fc2'
-    
-    def search(self, results, media, lang, manual):
-        keyword = self.get_search_keyword(media, manual, from_file=True)
-        keyword = keyword.strip().replace(' ', '-')
-        return self.base_search(results, media, lang, manual, keyword)
-
-    def update(self, metadata, media, lang):
-        self.base_update(metadata, media, lang)
 
 
 class ModuleJavUnCensored(ModuleJavCensoredBase):
     module_name = 'jav_uncensored'
-    
-    def search(self, results, media, lang, manual):
-        keyword = self.get_search_keyword(media, manual, from_file=True)
-        keyword = keyword.replace(' ', '-')
-        return self.base_search(results, media, lang, manual, keyword)
-
-    def update(self, metadata, media, lang):
-        self.base_update(metadata, media, lang)

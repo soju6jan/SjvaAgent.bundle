@@ -27,6 +27,12 @@ class AgentMovie(Agent.Movies):
     def search(self, results, media, lang, manual):
         key = AgentBase.get_key(media)
         Log('Key : %s', key)
+        
+        if manual and key in ['C', 'D', 'E', 'L'] and media.name is not None and media.name.startswith('JAVALL'):
+            for jav_key in ['C', 'D', 'E', 'L']:
+                self.instance_list[jav_key].search(results, media, lang, manual)
+            return
+
         ret = self.instance_list['Y'].search(results, media, lang, manual)
         if ret or key == 'Y':
             return
