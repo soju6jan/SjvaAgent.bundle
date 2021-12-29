@@ -1,6 +1,10 @@
-VERSION = '2021.12.28'
+VERSION = '2021.12.29'
 
 """
+2021.12.29
+ - JAV Uncensored 검색 추가
+ - JAV 전체 검색 추가. JAVALL|검색어
+
 2021.12.28
  - JAV search_keyword 오른쪽 - 붙어지는 경우 대응
 
