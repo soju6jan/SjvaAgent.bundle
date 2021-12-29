@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, traceback, json, urllib, re, unicodedata
 from .agent_base import AgentBase
-from .module_jav_censored import ModuleJavCensoredDvd, ModuleJavCensoredAma, ModuleJavFc2
+from .module_jav_censored import ModuleJavCensoredDvd, ModuleJavCensoredAma, ModuleJavFc2, ModuleJavUnCensored
 from .module_ott_show import ModuleOttShow
 from .module_movie import ModuleMovie
 from .module_yaml_movie import ModuleYamlMovie
@@ -17,6 +17,7 @@ class AgentMovie(Agent.Movies):
     instance_list = { 
         'C' : ModuleJavCensoredDvd(), 
         'D' : ModuleJavCensoredAma(), 
+        'E' : ModuleJavUnCensored(), 
         'L' : ModuleJavFc2(), 
         'P' : ModuleOttShow(),
         'M' : ModuleMovie(), 
@@ -29,11 +30,18 @@ class AgentMovie(Agent.Movies):
         ret = self.instance_list['Y'].search(results, media, lang, manual)
         if ret or key == 'Y':
             return
+        if manual and key in ['C', 'D', 'E', 'L']:
+            for k in ['C', 'D', 'E', 'L']:
+                ret = self.instance_list[k].search(results, media, lang, manual)
+                if k != 'L' and ret != False:
+                    break
         ret = self.instance_list[key].search(results, media, lang, manual)
         if ret == False and key == 'C' and Prefs['jav_dvd_search_all']:
             ret = self.instance_list['D'].search(results, media, lang, manual)
             if ret == False:
-                ret = self.instance_list['L'].search(results, media, lang, manual)
+                ret = self.instance_list['E'].search(results, media, lang, manual)
+                if ret == False:
+                    ret = self.instance_list['L'].search(results, media, lang, manual)
         
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)

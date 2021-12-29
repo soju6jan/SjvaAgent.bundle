@@ -195,3 +195,15 @@ class ModuleJavFc2(ModuleJavCensoredBase):
 
     def update(self, metadata, media, lang):
         self.base_update(metadata, media, lang)
+
+
+class ModuleJavUnCensored(ModuleJavCensoredBase):
+    module_name = 'jav_uncensored'
+    
+    def search(self, results, media, lang, manual):
+        keyword = self.get_search_keyword(media, manual, from_file=True)
+        keyword = keyword.replace(' ', '-')
+        return self.base_search(results, media, lang, manual, keyword)
+
+    def update(self, metadata, media, lang):
+        self.base_update(metadata, media, lang)
