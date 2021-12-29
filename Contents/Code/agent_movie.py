@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, traceback, json, urllib, re, unicodedata
 from .agent_base import AgentBase
-from .module_jav_censored import ModuleJavCensoredDvd, ModuleJavCensoredAma, ModuleJavFc2
+from .module_jav_censored import ModuleJavCensoredDvd, ModuleJavCensoredAma, ModuleJavFc2, ModuleJavUnCensored
 from .module_ott_show import ModuleOttShow
 from .module_movie import ModuleMovie
 from .module_yaml_movie import ModuleYamlMovie
@@ -17,6 +17,7 @@ class AgentMovie(Agent.Movies):
     instance_list = { 
         'C' : ModuleJavCensoredDvd(), 
         'D' : ModuleJavCensoredAma(), 
+        'E' : ModuleJavUnCensored(), 
         'L' : ModuleJavFc2(), 
         'P' : ModuleOttShow(),
         'M' : ModuleMovie(), 
@@ -31,9 +32,9 @@ class AgentMovie(Agent.Movies):
             return
         ret = self.instance_list[key].search(results, media, lang, manual)
         if ret == False and key == 'C' and Prefs['jav_dvd_search_all']:
-            ret = self.instance_list['D'].search(results, media, lang, manual)
-            if ret == False:
-                ret = self.instance_list['L'].search(results, media, lang, manual)
+            for jav_key in ['D', 'E', 'L']:
+                if self.instance_list[jav_key].search(results, media, lang, manual):
+                    return
         
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)

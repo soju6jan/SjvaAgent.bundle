@@ -17,7 +17,7 @@ class AgentBase(object):
     key_map = {
         'com.plexapp.agents.sjva_agent_jav_censored' : 'C',         # C : censored dvd
         'com.plexapp.agents.sjva_agent_jav_censored_ama' : 'D',     # D : censored ama
-        # E : uncensored 
+        'com.plexapp.agents.sjva_agent_jav_uncensored' : 'E',       # E : uncensored 
         # W : western
         'com.plexapp.agents.sjva_agent_jav_fc2' : 'L',              # L : fc2
         'com.plexapp.agents.sjva_agent_ktv' : 'K',                  # K : 국내TV
@@ -71,10 +71,7 @@ class AgentBase(object):
     def send_search(self, module_name, keyword, manual, year=''):
         try:
             module_prefs = self.get_module_prefs(module_name)
-            if module_name == 'jav_fc2':
-                sjva_mod_url = '/mod/api/fc2metadata'.format(module_name=module_name)
-            else:
-                sjva_mod_url = '/metadata/api/{module_name}'.format(module_name=module_name)
+            sjva_mod_url = '/metadata/api/{module_name}'.format(module_name=module_name)
 
             #url = '{ddns}/metadata/api/{module_name}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}'.format(
             url = '{ddns}{sjva_mod_url}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}'.format(
@@ -96,10 +93,7 @@ class AgentBase(object):
     def send_info(self, module_name, code, title=None):
         try:
             module_prefs = self.get_module_prefs(module_name)
-            if module_name == 'jav_fc2':
-                sjva_mod_url = '/mod/api/fc2metadata'.format(module_name=module_name)
-            else:
-                sjva_mod_url = '/metadata/api/{module_name}'.format(module_name=module_name)
+            sjva_mod_url = '/metadata/api/{module_name}'.format(module_name=module_name)
 
             #url = '{ddns}/metadata/api/{module_name}/info?code={code}&call=plex&apikey={apikey}'.format(
             url = '{ddns}{sjva_mod_url}/info?code={code}&call=plex&apikey={apikey}'.format(
@@ -232,7 +226,7 @@ class AgentBase(object):
                 Log(filename)
                 if self.module_name in ['movie']:
                     ret = os.path.join(os.path.dirname(filename), 'info.json')
-                elif self.module_name in ['jav_censored', 'jav_censored_ama', 'jav_fc2']:
+                elif self.module_name in ['jav_censored', 'jav_censored_ama', 'jav_fc2', 'jav_uncensored']:
                     section_id_list = []
                     if Prefs['filename_json'] is not None:
                         section_id_list = Prefs['filename_json'].split(',')

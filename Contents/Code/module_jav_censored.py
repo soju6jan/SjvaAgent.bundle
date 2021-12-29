@@ -31,8 +31,7 @@ class ModuleJavCensoredBase(AgentBase):
             meta = MetadataSearchResult(id=code, name=code, year=1900, score=100, thumb="", lang=lang)
             results.Append(meta)
             return True
-
-
+        
         if self.is_read_json(media):
             if manual:
                 self.remove_info(media)
@@ -44,6 +43,12 @@ class ModuleJavCensoredBase(AgentBase):
                     return True
 
         data = self.send_search(self.module_name, keyword, manual)
+
+        if manual and media.name is not None and media.name.startswith('JAVALL'):
+            keyword = media.name.replace('JAVALL|', '')
+            for site in ['jav_censored', 'jav_censored_ama', 'jav_uncensored', 'jav_fc2']:
+                data += self.send_search(site, keyword, manual)
+
         for item in data:
             #title = '[%s]%s' % (item['ui_code'], String.DecodeHTMLEntities(String.StripTags(item['title_ko'])).strip())
             if item['year'] != '' and item['year'] is not None:
@@ -191,6 +196,18 @@ class ModuleJavFc2(ModuleJavCensoredBase):
     def search(self, results, media, lang, manual):
         keyword = self.get_search_keyword(media, manual, from_file=True)
         keyword = keyword.strip().replace(' ', '-')
+        return self.base_search(results, media, lang, manual, keyword)
+
+    def update(self, metadata, media, lang):
+        self.base_update(metadata, media, lang)
+
+
+class ModuleJavUnCensored(ModuleJavCensoredBase):
+    module_name = 'jav_uncensored'
+    
+    def search(self, results, media, lang, manual):
+        keyword = self.get_search_keyword(media, manual, from_file=True)
+        keyword = keyword.replace(' ', '-')
         return self.base_search(results, media, lang, manual, keyword)
 
     def update(self, metadata, media, lang):
