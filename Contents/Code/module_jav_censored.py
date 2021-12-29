@@ -15,7 +15,7 @@ class ModuleJavCensoredBase(AgentBase):
                     ret = re.sub('\s*\[.*?\]', '', ret).strip()
                     match = Regex(r'(?P<cd>cd\d{1,2})$').search(ret) 
                     if match:
-                        ret = ret.replace(match.group('cd'), '')
+                        ret = ret.replace(match.group('cd'), '').strip()
                 else:
                     # from_scanner
                     ret = media.name
@@ -165,7 +165,7 @@ class ModuleJavCensoredDvd(ModuleJavCensoredBase):
     
     def search(self, results, media, lang, manual):
         keyword = self.get_search_keyword(media, manual, from_file=True)
-        keyword = keyword.replace(' ', '-')
+        keyword = keyword.strip().replace(' ', '-')
         return self.base_search(results, media, lang, manual, keyword)
  
 
@@ -178,7 +178,7 @@ class ModuleJavCensoredAma(ModuleJavCensoredBase):
     
     def search(self, results, media, lang, manual):
         keyword = self.get_search_keyword(media, manual, from_file=True)
-        keyword = keyword.replace(' ', '-')
+        keyword = keyword.strip().replace(' ', '-')
         return self.base_search(results, media, lang, manual, keyword)
 
     def update(self, metadata, media, lang):
@@ -190,7 +190,7 @@ class ModuleJavFc2(ModuleJavCensoredBase):
     
     def search(self, results, media, lang, manual):
         keyword = self.get_search_keyword(media, manual, from_file=True)
-        keyword = keyword.replace(' ', '-')
+        keyword = keyword.strip().replace(' ', '-')
         return self.base_search(results, media, lang, manual, keyword)
 
     def update(self, metadata, media, lang):
