@@ -330,7 +330,8 @@ class ModuleKtv(AgentBase):
                     if site in show_epi_info:
                         if ott_mode == 'full':
                             episode.originally_available_at = Datetime.ParseDate(show_epi_info[site]['premiered']).date()
-                            episode.title = show_epi_info[site]['premiered']
+                            #episode.title = show_epi_info[site]['premiered']
+                            episode.title = show_epi_info[site]['title'] if show_epi_info[site]['title'] != '' else show_epi_info[site]['premiered']
                             if frequency is not None:
                                 episode.title = u'%s회 (%s)' % (frequency, episode.title)
                             episode.summary = show_epi_info[site]['plot']
@@ -386,15 +387,20 @@ class ModuleKtv(AgentBase):
             metadata.roles.clear()
             for media_season_index in index_list:
                 Log('media_season_index is %s', media_season_index)
-                if media_season_index == '0':
+                # 2022-04-05
+                search_media_season_index = media_season_index
+                if len(str(media_season_index)) == 3:
+                    search_media_season_index = str(media_season_index)[1:]
+
+                if search_media_season_index in ['0', '00']:
                     continue
                 search_title = media.title.replace(u'[종영]', '')
                 search_title = search_title.split('|')[0].strip()
                 search_code = metadata.id            
                 if flag_media_season and 'daum' in search_data and len(search_data['daum']['series']) > 1:
                     try: #사당보다 먼 의정부보다 가까운 3
-                        search_title = search_data['daum']['series'][int(media_season_index)-1]['title']
-                        search_code = search_data['daum']['series'][int(media_season_index)-1]['code']
+                        search_title = search_data['daum']['series'][int(search_media_season_index)-1]['title']
+                        search_code = search_data['daum']['series'][int(search_media_season_index)-1]['code']
                     except:
                         pass
 
