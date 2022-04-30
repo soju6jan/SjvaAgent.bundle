@@ -180,15 +180,7 @@ class ModuleKtv(AgentBase):
         module_prefs = self.get_module_prefs(self.module_name)
         # 부가영상
         for item in meta_info['extras']:
-            if item['mode'] == 'mp4':
-                url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
-            elif item['mode'] == 'kakao':
-                url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(
-                    ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
-                    site=item['mode'], 
-                    param=item['content_url'], 
-                    apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'])
-                url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
+            url = 'sjva://sjva.me/playvideo/%s|%s' % (item['mode'], item['content_url'])
             metadata.extras.add(self.extra_map[item['content_type'].lower()](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
 
         # rating
@@ -214,30 +206,35 @@ class ModuleKtv(AgentBase):
         poster_index = art_index = banner_index = 0
         for item in sorted(meta_info['thumb'], key=lambda k: k['score'], reverse=True):
             valid_names.append(item['value'])
-            if item['aspect'] == 'poster':
-                if item['thumb'] == '':
-                    metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
-                    metadata_season.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
-                else:
-                    metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
-                    metadata_season.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
-                season_valid_names.append(item['value'])
-                poster_index = poster_index + 1
-            elif item['aspect'] == 'landscape':
-                if item['thumb'] == '':
-                    metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
-                    metadata_season.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
-                else:
-                    metadata.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
-                    metadata_season.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
-                season_valid_names.append(item['value'])
-                art_index = art_index + 1
-            elif item['aspect'] == 'banner':
-                if item['thumb'] == '': 
-                    metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
-                else:
-                    metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1) 
-                banner_index = banner_index + 1
+            try:
+                if item['aspect'] == 'poster':
+                    if item['thumb'] == '':
+                        metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
+                        metadata_season.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
+                    else:
+                        metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
+                        metadata_season.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
+                    season_valid_names.append(item['value'])
+                    poster_index = poster_index + 1
+                elif item['aspect'] == 'landscape':
+                    if item['thumb'] == '':
+                        metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
+                        metadata_season.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
+                    else:
+                        metadata.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
+                        metadata_season.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
+                    season_valid_names.append(item['value'])
+                    art_index = art_index + 1
+                elif item['aspect'] == 'banner':
+                    if item['thumb'] == '': 
+                        metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
+                    else:
+                        metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1) 
+                    banner_index = banner_index + 1
+            except Exception as e: 
+                Log('Exception:%s', e)
+                #Log(traceback.format_exc())
+                
         # 이거 확인필요. 번들제거 영향. 시즌을 주석처리안하면 쇼에 최후것만 입력됨.
         #metadata.posters.validate_keys(valid_names)
         #metadata.art.validate_keys(valid_names)
@@ -312,15 +309,7 @@ class ModuleKtv(AgentBase):
                 # 부가영상
                 module_prefs = self.get_module_prefs(self.module_name)
                 for item in episode_info['extras']:
-                    if item['mode'] == 'mp4':
-                        url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
-                    elif item['mode'] == 'kakao':
-                        url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'], 
-                        site=item['mode'], 
-                        param=item['content_url'], 
-                        apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'])
-                        url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
-                        #url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % item['content_url'].split('/')[-1]
+                    url = 'sjva://sjva.me/playvideo/%s|%s' % (item['mode'], item['content_url'])
                     episode.extras.add(self.extra_map[item['content_type'].lower()](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
             else:
                 ott_mode = 'full'

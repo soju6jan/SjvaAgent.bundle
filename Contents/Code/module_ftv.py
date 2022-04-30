@@ -175,11 +175,7 @@ class ModuleFtv(AgentBase):
         # 부가영상
         if 'extras' in meta_info:
             for item in meta_info['extras']:
-                if item['mode'] == 'mp4':
-                    url = 'sjva://sjva.me/video.mp4/%s' % item['content_url']
-                elif item['mode'] == 'kakao':
-                    url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(ddns=Prefs['server'], site=item['mode'], param=item['content_url'], apikey=Prefs['apikey'])
-                    url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (item['mode'], url)
+                url = 'sjva://sjva.me/playvideo/%s|%s' % (item['mode'], item['content_url'])
                 try: metadata.extras.add(self.extra_map[item['content_type'].lower()](url=url, title=self.change_html(item['title']), originally_available_at=Datetime.ParseDate(item['premiered']).date(), thumb=item['thumb']))
                 except: pass
 

@@ -92,6 +92,7 @@ def MediaObjectsForURL(url):
             ]
             
         elif url.find('/redirect.mp4/') != -1:
+            
             tmp = url.split('/redirect.mp4/')[1]
             mode, param = tmp.split('|')
             if mode in ['naver', 'youtube', 'kakao']:

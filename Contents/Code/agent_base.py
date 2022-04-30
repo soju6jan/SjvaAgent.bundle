@@ -12,6 +12,14 @@ class MetadataSearchResult(XMLObject):
     self.tagName = "SearchResult"
 """
 
+def d(data):
+    if type(data) in [type({}), type([])]:
+        import json
+        return '\n' + json.dumps(data, indent=4, ensure_ascii=False)
+    else:
+        return str(data)
+
+
 
 class AgentBase(object):
     key_map = {
@@ -26,7 +34,7 @@ class AgentBase(object):
         # A : ani
         'com.plexapp.agents.sjva_agent_ott_show' : 'P',
         'com.plexapp.agents.sjva_agent_movie' : 'M',                # M : 영화
-        'com.plexapp.agents.sjva_agent_music' : 'S',                # V : 앨범, 아티스트 
+        'com.plexapp.agents.sjva_agent_music_normal' : 'S',         # S : 앨범, 아티스트 
         # 오디오북?
         'com.plexapp.agents.sjva_agent_audiobook' : 'B',            # B : 오디오북
         'com.plexapp.agents.sjva_agent_audiobook_json' : 'J',       # Y : 오디오북 yaml
@@ -70,18 +78,24 @@ class AgentBase(object):
     
     def send_search(self, module_name, keyword, manual, year=''):
         try:
+            param = ''
+            if module_name in ['music_normal_artist', 'music_normal_album']:
+                param = module_name.split('_')[-1]
+                module_name = 'music_normal'
+            
             module_prefs = self.get_module_prefs(module_name)
             sjva_mod_url = '/metadata/api/{module_name}'.format(module_name=module_name)
 
             #url = '{ddns}/metadata/api/{module_name}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}'.format(
-            url = '{ddns}{sjva_mod_url}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}'.format(
+            url = '{ddns}{sjva_mod_url}/search?keyword={keyword}&manual={manual}&year={year}&call=plex&apikey={apikey}&param={param}'.format(
               ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
               sjva_mod_url=sjva_mod_url,
               module_name=module_name,
               keyword=urllib.quote(keyword.encode('utf8')),
               manual=manual,
               year=year,
-              apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey']
+              apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'],
+              param=param,
             )
             Log(url)
             return AgentBase.my_JSON_ObjectFromURL(url)
@@ -92,16 +106,21 @@ class AgentBase(object):
 
     def send_info(self, module_name, code, title=None):
         try:
+            param = ''
+            if module_name in ['music_normal_artist', 'music_normal_album']:
+                param = module_name.split('_')[-1]
+                module_name = 'music_normal'
             module_prefs = self.get_module_prefs(module_name)
             sjva_mod_url = '/metadata/api/{module_name}'.format(module_name=module_name)
 
             #url = '{ddns}/metadata/api/{module_name}/info?code={code}&call=plex&apikey={apikey}'.format(
-            url = '{ddns}{sjva_mod_url}/info?code={code}&call=plex&apikey={apikey}'.format(
+            url = '{ddns}{sjva_mod_url}/info?code={code}&call=plex&apikey={apikey}&param={param}'.format(
               ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
               sjva_mod_url=sjva_mod_url,
               module_name=module_name,
               code=urllib.quote(code.encode('utf8')),
-              apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey']
+              apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'],
+              param=param,
             )
             if title is not None:
                 url += '&title=' + urllib.quote(title.encode('utf8'))
@@ -211,19 +230,33 @@ class AgentBase(object):
     
     def get_json_filepath(self, media):
         try:
+            json_filename = 'info.json'
             data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % media.id)
             section_id = str(data['MediaContainer']['librarySectionID'])
             #Log(self.d(data))
             if data['MediaContainer']['Metadata'][0]['type'] == 'album':
+                Log(d(data))
+
+                if self.module_name in ['music_normal_album'] and  'Location' in data['MediaContainer']['Metadata'][0]:
+                    folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
+                    return os.path.join(folderpath, 'album.json')
+
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
                 #Log(self.d(data))
             elif data['MediaContainer']['Metadata'][0]['type'] == 'artist':
+                json_filename = 'artist.json'
+                if self.module_name in ['music_normal_artist'] and  'Location' in data['MediaContainer']['Metadata'][0]:
+                    folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
+                    return os.path.join(folderpath, 'artist.json')
+
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % data['MediaContainer']['Metadata'][0]['Children']['Metadata'][0]['ratingKey'])
 
 
             if 'Media' in data['MediaContainer']['Metadata'][0]:
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+                Log('33333333333')
                 Log(filename)
+                Log(self.module_name)
                 if self.module_name in ['movie']:
                     ret = os.path.join(os.path.dirname(filename), 'info.json')
                 elif self.module_name in ['jav_censored', 'jav_censored_ama', 'jav_fc2', 'jav_uncensored']:
@@ -240,6 +273,15 @@ class AgentBase(object):
                         ret = os.path.join(os.path.dirname(filename), 'info.json')
                 elif self.module_name in ['book', 'book_json']:
                     ret = os.path.join(os.path.dirname(filename), 'info.json')
+                
+                elif self.module_name in ['music_normal_album']:
+                    parent = os.path.split(os.path.dirname(filename))[1]
+                    match = re.match('CD(?P<disc>\d+)', parent, re.IGNORECASE)
+                    if match:
+                        ret = os.path.join(os.path.dirname(os.path.dirname(filename)), 'album.json')
+                    else:
+                        ret = os.path.join(os.path.dirname(filename), 'album.json')
+                    
                     
             elif 'Location' in data['MediaContainer']['Metadata'][0]:
                 # 쇼... ktv, ftv
@@ -257,6 +299,7 @@ class AgentBase(object):
     def save_info(self, media, info):
         try:
             ret = self.get_json_filepath(media)
+            Log('세이브 : %s', ret)
             if ret is None:
                 return
             import io
@@ -668,6 +711,9 @@ class AgentBase(object):
                             thumb=self.get(extra, 'thumb', '')
                         )
                     )
+                    Log('111111111111111111111')
+                    Log(url)
+
             elif is_primary:
                 #Log(meta)
                 #meta.clear()

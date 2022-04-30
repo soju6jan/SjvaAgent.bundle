@@ -201,9 +201,7 @@ class ModuleMovie(AgentBase):
 
             if 'wavve_stream' in meta_info['extra_info'] and meta_info['extra_info']['wavve_stream']['drm'] == False:
                 #if meta_info['extra_info']['wavve_stream']['mode'] == '0':
-                url = 'sjva://sjva.me/wavve_movie/%s' % (meta_info['extra_info']['wavve_stream']['plex'])
-                #else:
-                #    url = 'sjva://sjva.me/redirect.m3u8/wavve|%s' % (meta_info['extra_info']['wavve_stream']['plex2'])
+                url = 'sjva://sjva.me/playvideo/wavve_movie|%s' % (meta_info['extra_info']['wavve_stream']['plex'])
                 extra_media = FeaturetteObject(
                     url=url, 
                     title=u'웨이브 재생',
@@ -212,7 +210,7 @@ class ModuleMovie(AgentBase):
                 metadata.extras.add(extra_media)
             
             if 'tving_stream' in meta_info['extra_info'] and meta_info['extra_info']['tving_stream']['drm'] == False:
-                url = 'sjva://sjva.me/redirect.m3u8/tving|%s' % (meta_info['extra_info']['tving_stream']['plex'])
+                url = 'sjva://sjva.me/playvideo/tving|%s' % (meta_info['extra_info']['tving_stream']['plex'])
                 extra_media = FeaturetteObject(
                     url=url, 
                     title=u'티빙 재생',
@@ -228,15 +226,7 @@ class ModuleMovie(AgentBase):
                     thumb = extra['thumb']
                 extra_url = None
                 if extra['mode'] in ['naver', 'youtube', 'kakao']:
-                    url = '{ddns}/metadata/api/video?site={site}&param={param}&apikey={apikey}'.format(
-                        ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
-                        site=extra['mode'],
-                        param=extra['content_url'],
-                        apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey']
-                    )
-                    extra_url = 'sjva://sjva.me/redirect.mp4/%s|%s' % (extra['mode'], url)
-                #elif extra['mode'] == 'kakao':
-                #    extra_url = 'sjva://sjva.me/redirect.mp4/kakao|%s' % extra['content_url']
+                    extra_url = 'sjva://sjva.me/playvideo/%s|%s' % (extra['mode'], extra['content_url'])
                 if extra_url is not None:
                     metadata.extras.add(
                         self.extra_map[extra['content_type'].lower()](
@@ -245,7 +235,6 @@ class ModuleMovie(AgentBase):
                             thumb=thumb,
                         )
                     )
-
             if meta_info['tag'] is not None:
                 metadata.collections.clear()
                 for item in meta_info['tag']:

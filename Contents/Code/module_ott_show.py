@@ -107,13 +107,7 @@ class ModuleOttShow(AgentBase):
 
                 for site in ['tving', 'wavve']:
                     if site in info:
-                        url = '{ddns}/metadata/api/{module_name}/stream.m3u8?code={code}&call=plex&apikey={apikey}'.format(
-                            ddns=Prefs['server'] if module_prefs['server'] == '' else module_prefs['server'],
-                            module_name=self.module_name,
-                            code=info[site]['code'],
-                            apikey=Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey'],
-                        )
-                        url = 'sjva://sjva.me/%s/%s|%s' % ('redirect.m3u8' if site=='tving' else 'ott', site, url)
+                        url = 'sjva://sjva.me/playvideo/%s|%s' % (site, info[site]['code'])
                         title = info[site]['title'] if info[site]['title'] != '' else info[site]['plot']
                         extra_media = FeaturetteObject(
                             url=url, 

@@ -82,6 +82,38 @@ def get_lyric2(mode, track_key):
 
 
 
+@route('/music_normal_lyric') 
+def music_normal_lyric(mode, song_id, track_key):
+    Log('mode : %s  ' % (mode))
+    Log('track_key : %s' % (track_key))
+    Log('song_id : %s' % (song_id))
+    lyric = ''
+
+    from .module_music_normal import ModuleMusicNormalAlbum 
+    mod = ModuleMusicNormalAlbum()
+    module_prefs = mod.get_module_prefs('music_normal')
+    ddns = Prefs['server'] if module_prefs['server'] == '' else module_prefs['server']
+    apikey = Prefs['apikey'] if module_prefs['apikey'] == '' else module_prefs['apikey']
+
+    if ddns:
+        try:
+            url = 'http://127.0.0.1:32400/library/metadata/%s' % track_key
+            data = JSON.ObjectFromURL(url, headers={'accept' : 'application/json'})
+            #Log(d(data))
+            artist = data['MediaContainer']['Metadata'][0]['originalTitle']
+            track = data['MediaContainer']['Metadata'][0]['title']
+            filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+
+            url = '{ddns}/metadata/api/music_normal/song?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex&apikey={apikey}&song_id={song_id}'.format(ddns=ddns, mode=mode, filename=urllib.quote(filename.encode('utf8')), artist=urllib.quote(artist.encode('utf8')), track=urllib.quote(track.encode('utf8')), apikey=apikey, song_id=song_id)
+            data = JSON.ObjectFromURL(url, timeout=5000)
+            #Log(d(data))
+            lyric = data['lyric'] if data['ret'] == 'success' else data['log']
+        except Exception as e: 
+            Log('Exception:%s', e)
+            lyric = str(traceback.format_exc())
+    return lyric
+
+
 
 def d(data):
     return json.dumps(data, indent=4, ensure_ascii=False)
