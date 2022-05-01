@@ -112,8 +112,6 @@ class ModuleMusicNormalAlbum(AgentBase):
     module_name = 'music_normal_album'
     
     def search(self, results, media, lang, manual, **kwargs):
-        Log('AAAAAAAAAAAAAAAA')
-
         if manual and media.name is not None and (media.name.startswith('SM')):
             code = media.name
             meta = MetadataSearchResult(id=code, name=code, year='', score=100, thumb="", lang=lang)
@@ -131,7 +129,6 @@ class ModuleMusicNormalAlbum(AgentBase):
                     results.Append(meta)
                     return
 
-
         artist_code = media.parent_metadata.id
         artist_name = media.parent_metadata.title
         Log('artist_code: %s', artist_code)
@@ -141,37 +138,19 @@ class ModuleMusicNormalAlbum(AgentBase):
 
         album_title = None
         if manual:
-            Log('Running custom search...')
-            # Added 2016.3.25
             if media.name is not None:
                 album_title = re.sub("\[.*?\]", '', media.name).strip()
-
-                #tmp = re.sub('')
-                #album_title = unicodedata.normalize('NFKC', unicode(media.name)).strip()
             else:
                 album_title = re.sub("\[.*?\]", '', media.title).strip()
-                #album_title = media.title
         else:
-            # 태그로 하지 않는다
-            #media_name = media.parent_metadata.title + ' '
-            #for no, track in media.tracks.items():
-            #    media_name += ' ' + track.title
-            #    break
-            album_title = media.title
+            album_title = re.sub("\[.*?\]", '', media.title).strip()
 
-        Log('BBBBBBBBBBBBBBBBBBBBB')
-        Log(album_title)
         keyword = '%s|%s|%s' % (album_title, artist_name, artist_code)
-
-        Log('media.title : %s', media.title)
-        Log('media.name : %s', media.name)
-        Log('검색어 : %s', keyword)
+        Log('엘범 검색어 : %s', keyword)
         #search_data = self.send_search(self.module_name, movie_name, manual, year=movie_year)
         data = self.send_search(self.module_name, keyword, manual)
+        #Log(data)
 
-        Log(data)
-
-        
         for item in data:
             meta = MetadataSearchResult(id=item['code'], name=item['title'], year='', score=item['score'], thumb=item['image'], lang=lang)
             meta.summary = self.change_html('{}\n'.format(item['desc']))
@@ -273,7 +252,7 @@ class ModuleMusicNormalAlbum(AgentBase):
 
         metadata.title = '[%s] %s' % (data['album_type'], data['title'])
         return False
-        
+
 
     
 
