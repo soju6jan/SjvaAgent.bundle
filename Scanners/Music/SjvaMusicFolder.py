@@ -10,7 +10,7 @@ try:
     logger.setLevel(logging.DEBUG) 
     formatter = logging.Formatter(u'[%(asctime)s|%(levelname)s|%(filename)s|%(lineno)d] : %(message)s')
     file_max_bytes = 10 * 1024 * 1024 
-    filename = os.path.join(os.path.dirname( os.path.abspath( __file__ ) ), '../../', 'Logs', 'sjva.scanner.music_chart.log')
+    filename = os.path.join(os.path.dirname( os.path.abspath( __file__ ) ), '../../', 'Logs', 'sjva.scanner.music_folder.log')
     #fileHandler = logging.FileHandler(filename, encoding='utf8')
     fileHandler = logging.handlers.RotatingFileHandler(filename=filename, maxBytes=file_max_bytes, backupCount=5, encoding='utf8')
     fileHandler.setFormatter(formatter)
@@ -44,19 +44,21 @@ RE_UNICODE_CONTROL =  u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])
                       )
 
 def Process(path, files, mediaList, subdirs, language=None, root=None):
+  logger.info('PATH: %s', path)
+  
   if len(files) < 1: return
   albumTracks = []
-  for f in files:
+  files = list(sorted(files))
+  for idx, f in enumerate(files):
     try:
-      logger.info(f)
-      
+      logger.info("파일경로 : %s", f)
       (artist, album, title, track, disc, album_artist, compil) = getInfoFromTag(f, language)
 
       artist = album = os.path.basename(os.path.dirname(f))
       disc = '1'
 
       file = os.path.splitext(os.path.basename(f))[0]
-      match = re.match("^(?P<track>\d+)-(?P<title>.*?)-(?P<album_artist>[^-]+)-(?P<album>[^-]+)$", file)
+      #match = re.match("^(?P<track>\d+)-(?P<title>.*?)-(?P<album_artist>[^-]+)-(?P<album>[^-]+)$", file)
       if match:
         track = int(match.group('track'))
         title = match.group('title')

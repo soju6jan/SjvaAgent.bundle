@@ -34,7 +34,8 @@ class AgentBase(object):
         # A : ani
         'com.plexapp.agents.sjva_agent_ott_show' : 'P',
         'com.plexapp.agents.sjva_agent_movie' : 'M',                # M : 영화
-        'com.plexapp.agents.sjva_agent_music_normal' : 'S',         # S : 앨범, 아티스트 
+        'com.plexapp.agents.sjva_agent_music_normal' : 'S',         # S : 멜론 앨범, 아티스트 
+        'com.plexapp.agents.sjva_agent_music_folder' : 'T',         # T : 폴더 구조 우선 음악
         # 오디오북?
         'com.plexapp.agents.sjva_agent_audiobook' : 'B',            # B : 오디오북
         'com.plexapp.agents.sjva_agent_audiobook_json' : 'J',       # Y : 오디오북 yaml
@@ -235,7 +236,8 @@ class AgentBase(object):
             section_id = str(data['MediaContainer']['librarySectionID'])
             #Log(self.d(data))
             if data['MediaContainer']['Metadata'][0]['type'] == 'album':
-                Log(d(data))
+                #Log(d(data))
+                Log('타입 : 앨범')
 
                 if self.module_name in ['music_normal_album'] and  'Location' in data['MediaContainer']['Metadata'][0]:
                     folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
@@ -244,11 +246,14 @@ class AgentBase(object):
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
                 #Log(self.d(data))
             elif data['MediaContainer']['Metadata'][0]['type'] == 'artist':
-                json_filename = 'artist.json'
+                Log('타입 : 아티스트')
+                """
+                # 이거 너무 상위 폴더로 가버림.
                 if self.module_name in ['music_normal_artist'] and  'Location' in data['MediaContainer']['Metadata'][0]:
                     folderpath = data['MediaContainer']['Metadata'][0]['Location'][0]['path']
                     return os.path.join(folderpath, 'artist.json')
-
+                """
+                json_filename = 'artist.json'
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % data['MediaContainer']['Metadata'][0]['Children']['Metadata'][0]['ratingKey'])
 
 
@@ -281,6 +286,21 @@ class AgentBase(object):
                         ret = os.path.join(os.path.dirname(os.path.dirname(filename)), 'album.json')
                     else:
                         ret = os.path.join(os.path.dirname(filename), 'album.json')
+                elif self.module_name in ['music_normal_artist']:
+                    parent = os.path.split(os.path.dirname(filename))[1]
+                    match = re.match('CD(?P<disc>\d+)', parent, re.IGNORECASE)
+                    
+                    if match:
+                        album_root = os.path.dirname(os.path.dirname(filename))
+                    else:
+                        album_root = os.path.dirname(filename)
+                    album_basename = os.path.basename(album_root)
+                    if album_basename.count(' - ') == 1:
+                        ret = os.path.join(album_root, 'artist.json')
+                    else:
+                        ret = os.path.join(os.path.dirname(album_root), 'artist.json')
+
+                
                     
                     
             elif 'Location' in data['MediaContainer']['Metadata'][0]:
