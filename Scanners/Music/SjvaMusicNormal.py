@@ -51,6 +51,23 @@ RE_UNICODE_CONTROL =  u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])
 def Process(path, files, mediaList, subdirs, language=None, root=None):
   if len(files) < 1: return
   albumTracks = []
+  logger.debug('PATH: %s', path)
+  # Various Artists
+  va_flag = False
+
+  album_path = os.path.dirname(files[0])
+  artist_path, album_name = os.path.split(album_path)
+  cate_path, artist_name = os.path.split(artist_path)
+  if os.path.exists(os.path.join(cate_path, 'V.A')):
+    va_flag = True
+  elif os.path.exists(os.path.join(artist_path, 'V.A')):
+    va_flag = True
+  elif os.path.exists(os.path.join(album_path, 'V.A')):
+    va_flag = True
+  elif album_name.startswith('V.A'):
+    va_flag = True
+
+
   for f in files:
     try:
       logger.info(f)
@@ -100,10 +117,12 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
       logger.debug('title2 : %s', title)
 
       (allbutParentDir, parentDir) = os.path.split(os.path.dirname(f))
-      if title.count(' - ') == 1 and artist == '[Unknown Artist]': # see if we can parse the title for artist - title
-        (artist, title) = title.split(' - ')
-        if len(artist) == 0: artist = '[Unknown Artist]'
-      elif parentDir and parentDir.count(' - ') == 1 and (artist == '[Unknown Artist]' or album == '[Unknown Album]'):  #see if we can parse the folder dir for artist - album
+      # 잘못된 파일이 너무 많음.
+      #if title.count(' - ') == 1 and artist == '[Unknown Artist]': # see if we can parse the title for artist - title
+      #  (artist, title) = title.split(' - ')
+      #  if len(artist) == 0: artist = '[Unknown Artist]'
+      
+      if parentDir and parentDir.count(' - ') == 1 and (artist == '[Unknown Artist]' or album == '[Unknown Album]'):  #see if we can parse the folder dir for artist - album
         (pathArtist, pathAlbum) = parentDir.split(' - ')
         if artist == '[Unknown Artist]': artist = re.sub("\[.*?\]", '', pathArtist).strip() 
         if album == '[Unknown Album]': album = re.sub("\[.*?\]", '', pathAlbum).strip() 
@@ -120,8 +139,8 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
         (allbutParentDir2, parentDir2) = os.path.split(allbutParentDir)
         artist = re.sub("\[.*?\]", '', parentDir2).strip()
 
-
-
+      if va_flag:
+        artist = 'Various Artists'
       #make sure our last move is to encode to utf-8 before handing text back.
       logger.debug('=============================================')
       logger.debug('LAST artist : %s', cleanPass(artist))

@@ -18,4 +18,4 @@ class SjvaAgentMusicNormalAlbum(Agent.Album):
     primary_provider = True
 
     def search(self, results, media, lang, manual, **kwargs):
-        pass
+        pass 

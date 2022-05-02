@@ -49,20 +49,35 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
   if len(files) < 1: return
   albumTracks = []
   files = list(sorted(files))
+  track_map = {}
   for idx, f in enumerate(files):
     try:
       logger.info("파일경로 : %s", f)
       (artist, album, title, track, disc, album_artist, compil) = getInfoFromTag(f, language)
 
-      artist = album = os.path.basename(os.path.dirname(f))
+      tmp, basename = os.path.split(f)
+      tmp, album = os.path.split(tmp)
+      tmp, artist = os.path.split(tmp)
+      basename = os.path.splitext(basename)[0]
+
+      if album.count(' - ') == 1:
+        artist, album = album.split(' - ')
+
+      if artist:
+        artist = re.sub("\[.*?\]", '', artist).strip() 
+      if album:
+        album = re.sub("\[.*?\]", '', album).strip() 
+      
       disc = '1'
 
-      file = os.path.splitext(os.path.basename(f))[0]
       #match = re.match("^(?P<track>\d+)-(?P<title>.*?)-(?P<album_artist>[^-]+)-(?P<album>[^-]+)$", file)
+      match = re.match("^(?P<track>\d+)[\s\.\-\_]+(?P<title>.*?)$", basename)
       if match:
         track = int(match.group('track'))
-        title = match.group('title')
-        #album_artist = match.group('album_artist')
+        title = match.group('title').strip(' -._')
+      else:
+        track = len(mediaList) + 1
+        title = basename
        
       logger.debug('=============================================')
       logger.debug('LAST artist : %s', cleanPass(artist))
@@ -71,6 +86,8 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
       logger.debug('LAST track : %s', track)
       logger.debug('LAST disc : %s', disc)
       logger.debug('LAST album_artist : %s', cleanPass(album_artist))
+      
+      disc = str(add_map(track_map, disc, track))
 
       t = Media.Track(cleanPass(artist), cleanPass(album), cleanPass(title), track, disc=disc, album_artist=cleanPass(album_artist), guid=None, album_guid=None)
       t.parts.append(f)
@@ -80,6 +97,19 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
       logger.error('Exception:%s', e)
       logger.error(traceback.format_exc())
       logger.debug("Skipping (Metadata tag issue): " + f)
+
+
+def add_map(track_map, disc, track):
+  disc = int(disc)
+  track = int(track)
+  while True:
+    if str(disc) not in track_map:
+      track_map[str(disc)] = []
+    if track not in track_map[str(disc)]:
+      track_map[str(disc)].append(track)
+      return str(disc)
+    disc = disc + 1
+
 
 
 def cleanPass(t):
