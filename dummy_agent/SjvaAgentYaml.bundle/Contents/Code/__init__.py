@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 class SjvaAgentYamlMusicArtist(Agent.Artist):
-    name = 'SJVA YAML Artist (dummy)'
+    name = 'SJVA YAML (dummy)'
     
     fallback_agent = 'com.plexapp.agents.sjva_agent'
     languages = [Locale.Language.Korean]
@@ -11,7 +11,7 @@ class SjvaAgentYamlMusicArtist(Agent.Artist):
 
 
 class SjvaAgentYamlMusicAlbum(Agent.Album):
-    name = 'SJVA YAML Album (dummy)'
+    name = 'SJVA YAML (dummy)'
     
     fallback_agent = 'com.plexapp.agents.sjva_agent'
     languages = [Locale.Language.Korean]
@@ -22,7 +22,7 @@ class SjvaAgentYamlMusicAlbum(Agent.Album):
 
 
 class SjvaAgentYamlMusicMovie(Agent.Movies):
-    name = 'SJVA YAML Movie (dummy)'
+    name = 'SJVA YAML (dummy)'
     
     fallback_agent = 'com.plexapp.agents.sjva_agent'
     languages = [Locale.Language.Korean]
@@ -33,7 +33,7 @@ class SjvaAgentYamlMusicMovie(Agent.Movies):
 
 
 class SjvaAgentYamlMusicShow(Agent.TV_Shows):
-    name = u'SJVA YAML Show (dummy)'
+    name = u'SJVA YAML (dummy)'
     
     fallback_agent = 'com.plexapp.agents.sjva_agent'
     languages = [Locale.Language.Korean]

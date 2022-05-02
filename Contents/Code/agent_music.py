@@ -2,9 +2,7 @@
 import os, traceback, json, urllib, re, unicodedata
 from .agent_base import AgentBase
 from .module_music_normal import ModuleMusicNormalArtist, ModuleMusicNormalAlbum
-from .module_music_folder import ModuleMusicFolderArtist, ModuleMusicFolderAlbum
 from .module_audiobook import ModuleAudiobookArtist, ModuleAudiobookAlbum
-from .module_audiobook_json import ModuleAudiobookJsonArtist, ModuleAudiobookJsonAlbum
 from .module_yaml_music import ModuleYamlArtist, ModuleYamlAlbum
 from .module_lyric import ModuleLyric
 
@@ -17,9 +15,7 @@ class AgentArtist(Agent.Artist):
 
     instance_list = { 
         'S' : ModuleMusicNormalArtist(),
-        'T' : ModuleMusicFolderArtist(), 
         'B' : ModuleAudiobookArtist(),
-        'J' : ModuleAudiobookJsonArtist(),
         'Y' : ModuleYamlArtist(),
     }
 
@@ -29,10 +25,6 @@ class AgentArtist(Agent.Artist):
         ret = self.instance_list['Y'].search(results, media, lang, manual)
         if ret or key == 'Y':
             return
-        if key == 'B':
-            ret = self.instance_list['J'].search(results, media, lang, manual)
-            if ret:
-                return
         self.instance_list[key].search(results, media, lang, manual)
         
     def update(self, metadata, media, lang):
@@ -51,9 +43,7 @@ class AgentAlbum(Agent.Album):
 
     instance_list = { 
         'S' : ModuleMusicNormalAlbum(),
-        'T' : ModuleMusicFolderAlbum(),
         'B' : ModuleAudiobookAlbum(),
-        'J' : ModuleAudiobookJsonAlbum(),
         'Y' : ModuleYamlAlbum(),
         'L' : ModuleLyric(),
     }
@@ -64,12 +54,10 @@ class AgentAlbum(Agent.Album):
         ret = self.instance_list['Y'].search(results, media, lang, manual)
         if ret or key == 'Y':
             return
-        if key == 'B':
-            ret = self.instance_list['J'].search(results, media, lang, manual)
-            if ret:
-                return
         self.instance_list[key].search(results, media, lang, manual)
         
+
+
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)
         need_lyric = self.instance_list[metadata.id[0]].update(metadata, media, lang)
@@ -81,4 +69,4 @@ class AgentAlbum(Agent.Album):
         if need_lyric:
             Log("가사 탐색")
             self.instance_list['L'].update(metadata, media, lang, is_primary=False)
-        Log(metadata.title)
+        

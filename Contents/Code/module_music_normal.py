@@ -133,8 +133,11 @@ class ModuleMusicNormalAlbum(AgentBase):
         artist_name = media.parent_metadata.title
         Log('artist_code: %s', artist_code)
         Log('artist_name: %s', artist_name)
-        #if artist_code is None:
-        #    return
+        
+        # 폴더명에 있는 날짜
+        album_folder_name = os.path.basename(os.path.dirname(self.get_json_filepath(media)))
+        pub_date = date_from_target(album_folder_name)
+        Log("album_folder_name : %s [%s]", album_folder_name, pub_date)
 
         album_title = None
         if manual:
@@ -145,7 +148,7 @@ class ModuleMusicNormalAlbum(AgentBase):
         else:
             album_title = re.sub("\[.*?\]", '', media.title).strip()
 
-        keyword = '%s|%s|%s' % (album_title, artist_name, artist_code)
+        keyword = '%s|%s|%s|%s' % (album_title, artist_name, artist_code, pub_date)
         Log('엘범 검색어 : %s', keyword)
         #search_data = self.send_search(self.module_name, movie_name, manual, year=movie_year)
         data = self.send_search(self.module_name, keyword, manual)
@@ -177,7 +180,12 @@ class ModuleMusicNormalAlbum(AgentBase):
         except:
             # 특수문자 때문에
             Log(data['title'])
-            new_string = ''.join(char for char in data['title'] if char.isalnum() or char == ' ')
+            # iter 안 먹음
+            new = []
+            for i in len(data['title']):
+                if data['title'][i] == ' ' or data['title'][i].isalnum():
+                    new.append(data['title'][i])
+            #new_string = ''.join(char for char in data['title'] if char.isalnum() or char == ' ')
             metadata.title_sort = unicodedata.normalize('NFKD', new_string)
 
         metadata.summary = '%s\n%s' % (data['desc'], data['info_desc'])
@@ -192,6 +200,7 @@ class ModuleMusicNormalAlbum(AgentBase):
         
 
         def get_track_meta(track_data, index):
+            Log('qqqqqqqqqqqqqqqq %s' , index)
             count = 0
             for cd in track_data:
                 for track in cd:
@@ -201,22 +210,62 @@ class ModuleMusicNormalAlbum(AgentBase):
             
         valid_track_keys = []
         valid_keys = defaultdict(list)
-        for index in media.tracks:
-            filename = os.path.splitext(os.path.basename(media.tracks[index].items[0].parts[0].file))[0]
-            Log('filename: %s', filename)
+        Log("==========================================")
+        Log("media.children : %s", len(media.children))
+        Log("media.tracks : %s", len(media.tracks))
 
-            track_data = get_track_meta(data['track'], int(index))
+        more_disc = True if len(media.children) != len(media.tracks) else False 
+        #for index in media.tracks:
+        for index, track_media in enumerate(media.children):
+            track_key = track_media.id or index
+
+            #data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % track_key)
+
+            if more_disc:
+                # 18 disc index 알수 있는 방법이 없음.
+                cu = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % track_key)
+                #Log(cu)
+                disc_index = cu['MediaContainer']['Metadata'][0]['parentIndex']
+            else:
+                disc_index = 1
+            
+            #continue
+            valid_track_keys.append(track_key)
+            #Log(len(media.tracks[index].items))
+            #filename = os.path.splitext(os.path.basename(media.tracks[index].items[0].parts[0].file))[0]
+            #Log('filename: %s', filename)
+
+            try:
+                track_data = data['track'][disc_index-1][int(track_media.index)-1]
+            except:
+                track_data = None
+                Log("에러: disc_index %s %s", disc_index, track_media.index)
+
             if track_data == None:
                 continue
-            track_key = media.tracks[index].id or int(index)
-            valid_track_keys.append(track_key)
-            t = metadata.tracks[track_key]
+            track_meta = metadata.tracks[track_key]
+            """
+            Log("---------------------------------------")
+            Log('INDEX: %s', index)
+            Log('TRACK_KEY: %s', track_key)
+            Log('track_media.index: %s', track_media.index) #CD별로 동일. 트랙번호
+            Log('track_media.absoluteIndex: %s', track_media.absoluteIndex) #의미없는 index
+            Log("PLEX데이터 미디어: %s", track_media.title)
+            Log("PLEX데이터 메타: %s", track_meta.title)
+            Log("PLEX데이터 disc_index: %s", track_meta.disc_index)
+            Log("PLEX데이터 track_index: %s", track_meta.track_index)
+            Log("에이전트데이터: %s", track_data['title'])
+            """
+
+            #track_key = media.tracks[index].id or int(index)
+            #valid_track_keys.append(track_key)
+            #t = metadata.tracks[track_key]
             if track_data['singer'] != '':
-                t.original_title = track_data['singer']
+                track_meta.original_title = track_data['singer']
 
             if track_data['song_id'] == '':
                 continue
-            try:
+            try: 
                 for idx, mode in enumerate(['txt']):
                     url = 'http://127.0.0.1:32400/:/plugins/com.plexapp.agents.sjva_agent/function/music_normal_lyric?mode={mode}&song_id={song_id}&track_key={track_key}'.format(
                         mode = mode,
@@ -246,8 +295,8 @@ class ModuleMusicNormalAlbum(AgentBase):
         metadata.tracks.validate_keys(valid_track_keys)
 
         for key in metadata.tracks:
-            Log(key)
-            Log(valid_keys[key])
+            #Log(key)
+            #Log(valid_keys[key])
             metadata.tracks[key].lyrics.validate_keys(valid_keys[key])
 
         metadata.title = '[%s] %s' % (data['album_type'], data['title'])
@@ -256,4 +305,34 @@ class ModuleMusicNormalAlbum(AgentBase):
 
     
 
-    
+
+
+
+# 폴더명에 있는 날짜
+
+def date_from_target(target):
+    regex = '[^\d](?P<year>\d{4})([\.-]?(?P<month>\d{1,2})([\.-]?(?P<day>\d{1,2}))?)?[^\d]'
+    try:
+        match = re.search(regex, target)
+        if match == None:
+            return ''
+        year = int(match.group('year'))
+        if year < 1900 or year > 2100:
+            return ''
+        
+        if 'month' not in match.groupdict():
+            return str(year)
+        month = int(match.group('month'))
+        if month < 1 or month > 12:
+            return str(year)
+        
+        if 'day' not in match.groupdict():
+            return str(year) + str(month).zfill(2)
+        day = int(match.group('day'))
+        if day < 1 or day > 31:
+            return str(year) + str(month).zfill(2)
+        
+        return str(year) + str(month).zfill(2) + str(day).zfill(2)
+    except:
+        return ''
+

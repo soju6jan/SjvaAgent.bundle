@@ -35,7 +35,7 @@ class AgentBase(object):
         'com.plexapp.agents.sjva_agent_ott_show' : 'P',
         'com.plexapp.agents.sjva_agent_movie' : 'M',                # M : 영화
         'com.plexapp.agents.sjva_agent_music_normal' : 'S',         # S : 멜론 앨범, 아티스트 
-        'com.plexapp.agents.sjva_agent_music_folder' : 'T',         # T : 폴더 구조 우선 음악
+        #'com.plexapp.agents.sjva_agent_music_folder' : 'T',         # T : 폴더 구조
         # 오디오북?
         'com.plexapp.agents.sjva_agent_audiobook' : 'B',            # B : 오디오북
         'com.plexapp.agents.sjva_agent_audiobook_json' : 'J',       # Y : 오디오북 yaml
@@ -543,6 +543,8 @@ class AgentBase(object):
             elif content_type == 'artist':
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % data['MediaContainer']['Metadata'][0]['Children']['Metadata'][0]['ratingKey'])
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+                
+                """
                 yaml_filepath = os.path.join(os.path.dirname(filename), 'artist.yaml')
                 Log('bbbbbbbbbbbbbbbbbbbbbbbbbbbbb')
                 Log(yaml_filepath)
@@ -551,6 +553,29 @@ class AgentBase(object):
                 yaml_filepath = os.path.join(os.path.dirname(os.path.dirname(filename)), 'artist.yaml')
                 if os.path.exists(yaml_filepath):
                     return yaml_filepath
+                """
+
+                parent = os.path.split(os.path.dirname(filename))[1]
+                match = re.match('CD(?P<disc>\d+)', parent, re.IGNORECASE)
+                    
+                if match:
+                    album_root = os.path.dirname(os.path.dirname(filename))
+                else:
+                    album_root = os.path.dirname(filename)
+                album_basename = os.path.basename(album_root)
+                if album_basename.count(' - ') == 1:
+                    ret = os.path.join(album_root, 'artist.yaml')
+                else:
+                    # 2022-05-02
+                    # V.A 가있다는 것은 카테-앨범 구조라고 픽스
+                    # 없다면 카테 - 아티스트 - 앨범
+                    # OST 컴필 등
+                    tmp = os.path.join(os.path.dirname(album_root), 'V.A')
+                    if os.path.exists(tmp):
+                        ret = os.path.join(album_root, 'artist.yaml')
+                    else:
+                        ret = os.path.join(os.path.dirname(album_root), 'artist.yaml')
+
 
 
         except Exception as e: 
