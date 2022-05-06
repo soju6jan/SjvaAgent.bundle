@@ -34,13 +34,21 @@ class ModuleMusicNormalArtist(AgentBase):
                         meta = MetadataSearchResult(id=code, name=info_json['title'], year='', score=100, thumb="", lang=lang)
                         results.Append(meta)
                         return
+            
+            # 동명이인... 폴더에 있는 [MA1234] 처리
+            json_path = self.get_json_filepath(media)
+            album_basename = os.path.basename(os.path.dirname(json_path))
+            match = re.search("\[MA(?P<code>\d+)\]", album_basename)
+            if match:
+                meta = MetadataSearchResult(id='SA%s' % match.group('code'), name=album_basename, year='', score=100, thumb='', lang=lang)
+                results.Append(meta) 
 
             if manual:
                 keyword = '%s|%s' % (media.artist, media.album)
             else:
                 keyword = '%s|%s' % (media.title, media.album)
             Log('media.artist : %s', media.artist)
-            Log('검색어 : %s', keyword)
+            Log('KEYWORD : %s', keyword)
             data = self.send_search(self.module_name, keyword, manual)
             for item in data:
                 meta = MetadataSearchResult(id=item['code'], name=item['artist'], year='', score=item['score'], thumb=item['image'], lang=lang)
@@ -66,7 +74,7 @@ class ModuleMusicNormalArtist(AgentBase):
                 data = info_json
         if data is None:
             data = self.send_info(self.module_name, code)
-            Log("JSON 쓰기 : %s", self.is_write_json(media))
+            Log("JSON WRITE : %s", self.is_write_json(media))
             if data is not None and self.is_write_json(media):
                 self.save_info(media, data)
         
@@ -149,7 +157,7 @@ class ModuleMusicNormalAlbum(AgentBase):
             album_title = re.sub("\[.*?\]", '', media.title).strip()
 
         keyword = '%s|%s|%s|%s' % (album_title, artist_name, artist_code, pub_date)
-        Log('엘범 검색어 : %s', keyword)
+        Log('keyword : %s', keyword)
         #search_data = self.send_search(self.module_name, movie_name, manual, year=movie_year)
         data = self.send_search(self.module_name, keyword, manual)
         #Log(data)
@@ -175,18 +183,30 @@ class ModuleMusicNormalAlbum(AgentBase):
                 self.save_info(media, data)
         
         #metadata.title = '[%s] %s' % (data['album_type'], data['title'])
+
+        #Log(self.d(data))
+        #Log( 'title' in data)
+        #Log( 'code' in data)
+        #Log("title : %s", data['title'])
         try:
-            metadata.title_sort = unicodedata.normalize('NFKD', data['title'])
-        except:
-            # 특수문자 때문에
-            Log(data['title'])
-            # iter 안 먹음
-            new = []
-            for i in len(data['title']):
-                if data['title'][i] == ' ' or data['title'][i].isalnum():
-                    new.append(data['title'][i])
-            #new_string = ''.join(char for char in data['title'] if char.isalnum() or char == ' ')
+            #Log('title' in data)
+            #tmp = u'%s' % data['titie'] 1818181818
+            tmp = unicode(data['title'])
+            metadata.title_sort = unicodedata.normalize('NFKD', tmp)
+        except Exception as e: 
+            Log('Exception:%s', e)
+            Log(traceback.format_exc())
+            new_string = ''.join(char for char in data['title'] if char.isalnum() or char == ' ')
             metadata.title_sort = unicodedata.normalize('NFKD', new_string)
+            # 특수문자 때문에
+            #Log("title : %s", tmp)
+            # iter 안 먹음
+            #new = []
+            #for i in len(tmp):
+            #    if tmp[i] == ' ' or tmp[i].isalnum():
+            #        new.append(tmp[i])
+            
+            #metadata.title_sort = unicodedata.normalize('NFKD', new_string)
 
         metadata.summary = '%s\n%s' % (data['desc'], data['info_desc'])
 
@@ -199,15 +219,6 @@ class ModuleMusicNormalAlbum(AgentBase):
         metadata.originally_available_at = Datetime.ParseDate(data['originally_available_at']).date()
         
 
-        def get_track_meta(track_data, index):
-            Log('qqqqqqqqqqqqqqqq %s' , index)
-            count = 0
-            for cd in track_data:
-                for track in cd:
-                    count = count + 1
-                    if count == index:
-                        return track
-            
         valid_track_keys = []
         valid_keys = defaultdict(list)
         Log("==========================================")
@@ -239,7 +250,7 @@ class ModuleMusicNormalAlbum(AgentBase):
                 track_data = data['track'][disc_index-1][int(track_media.index)-1]
             except:
                 track_data = None
-                Log("에러: disc_index %s %s", disc_index, track_media.index)
+                Log("ERROR: disc_index %s %s", disc_index, track_media.index)
 
             if track_data == None:
                 continue
@@ -261,7 +272,11 @@ class ModuleMusicNormalAlbum(AgentBase):
             #valid_track_keys.append(track_key)
             #t = metadata.tracks[track_key]
             if track_data['singer'] != '':
-                track_meta.original_title = track_data['singer']
+                #track_meta.original_title = track_data['singer']
+                if track_data['title'] == track_media.title:
+                    track_meta.original_title = '%s' % (track_data['singer'])
+                else:
+                    track_meta.original_title = '%s - %s' % (track_data['singer'], track_data['title'])
 
             if track_data['song_id'] == '':
                 continue
@@ -275,7 +290,7 @@ class ModuleMusicNormalAlbum(AgentBase):
                     metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = mode, sort_order=idx+1)
                     valid_keys[track_key].append(url)
                     """
-                    # 뮤직비디오
+                    # MUSICVIDEO
                     if int(index) == 3:
                         extra_url = 'sjva://sjva.me/playvideo/%s|%s' % ('youtube', 'QPntYezaHS4')
                         Log(url)
@@ -308,7 +323,7 @@ class ModuleMusicNormalAlbum(AgentBase):
 
 
 
-# 폴더명에 있는 날짜
+# date on folder basename
 
 def date_from_target(target):
     regex = '[^\d](?P<year>\d{4})([\.-]?(?P<month>\d{1,2})([\.-]?(?P<day>\d{1,2}))?)?[^\d]'

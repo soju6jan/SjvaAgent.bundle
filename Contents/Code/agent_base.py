@@ -259,9 +259,6 @@ class AgentBase(object):
 
             if 'Media' in data['MediaContainer']['Metadata'][0]:
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
-                Log('33333333333')
-                Log(filename)
-                Log(self.module_name)
                 if self.module_name in ['movie']:
                     ret = os.path.join(os.path.dirname(filename), 'info.json')
                 elif self.module_name in ['jav_censored', 'jav_censored_ama', 'jav_fc2', 'jav_uncensored']:
