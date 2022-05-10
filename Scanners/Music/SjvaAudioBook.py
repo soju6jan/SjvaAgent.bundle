@@ -21,9 +21,9 @@ except:
 import re, traceback
 import AudioFiles, Media
 
-folder_regex = [
-    r'\[(?P<author>.*?)\]\s*(?P<title>.*?)(\s?\[.*?\])?$'
-]
+#folder_regex = [
+#    #r'\[(?P<author>.*?)\]\s*(?P<title>.*?)(\s?\[.*?\])?$'
+#]
 
 file_regex = [
     r'^(?P<track>\d{1,3})',
@@ -41,27 +41,32 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if len(files) == 0:
         return
     folder = path.split(os.sep)[-1]
-    match = re.match(folder_regex[0], folder)
-    if match:
-        logger.info("작가 : %s" % match.group('author'))
-        logger.info("제목 : %s" % match.group('title'))
-        artist = album_artist = match.group('author')
-        album = match.group('title')
+    folder = re.sub("\[.*?\]", '', folder).strip()
+    cnt = folder.count(' - ')
+    if cnt > 0:
+        tmps = folder.split(' - ', 1)
+        logger.debug(tmps)
+        artist = tmps[0].strip()
+        album = tmps[1].strip()
     else:
         album = folder
-        artist = album_artist = ''
-        
-    
+        artist = 'Various Artists_%s' % (cleanPass(album))
+    track_map = {}
     for filepath in files:
         try:
             filename = os.path.basename(filepath)
+            filename = re.sub('\d{8}', '', filename).strip(' -._')
             track = -1
-            for regex in file_regex:
-                match = re.search(regex, filename)
-                if match:
-                    track = int(match.group('track'))
-                    logger.debug(regex)
-                    break
+            m = re.match("^([0-9]{1,3})([^0-9].*)$", filepath) or re.match(".*[ \-\.]+([0-9]{2})[ \-\.]+([^0-9].*)$", filepath) or re.match("^[a-f]([0-9]{2})[ \-\.]+([^0-9].*)$", filepath)
+            if m:
+                track = int(m.group(1))
+            else:            
+                for regex in file_regex:
+                    match = re.search(regex, filename)
+                    if match:
+                        track = int(match.group('track'))
+                        logger.debug(regex)
+                        break
             if track == -1:
                 tmp = re.finditer(r'(?P<track>\d{1,3})', os.path.splitext(filename)[0])
                 for m in tmp:
@@ -69,9 +74,18 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             if track == -1:
                 track = 1
                
-            logger.debug("트랙번호 : %s - %s", track, filename)
+            #logger.debug("트랙번호 : %s - %s", track, filename)
             title = os.path.splitext(filename)[0].strip(' -._')
-            t = Media.Track(cleanPass(artist), cleanPass(album), cleanPass(title), track, disc=1, album_artist=cleanPass(album_artist), guid=None, album_guid=None)
+
+            logger.debug('=============================================')
+            logger.debug('LAST artist : %s', cleanPass(artist))
+            logger.debug('LAST album : %s', cleanPass(album))
+            logger.debug('LAST title : %s', cleanPass(title))
+            logger.debug('LAST track : %s', track)
+
+            disc = str(add_map(track_map, '1', track))
+
+            t = Media.Track(cleanPass(artist), cleanPass(album), cleanPass(title), track, disc=disc, album_artist=None, guid=None, album_guid=None)
             t.parts.append(filepath)
             mediaList.append(t)
         except Exception as e:
@@ -81,6 +95,16 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     logger.debug("미디어 수 : %s", len(mediaList))   
 
 
+def add_map(track_map, disc, track):
+  disc = int(disc)
+  track = int(track)
+  while True:
+    if str(disc) not in track_map:
+      track_map[str(disc)] = []
+    if track not in track_map[str(disc)]:
+      track_map[str(disc)].append(track)
+      return str(disc)
+    disc = disc + 1
 
 
 

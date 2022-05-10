@@ -52,9 +52,25 @@ class ModuleYamlShow(ModuelYamlBase):
         try: 
             filepath_list = self.get_yaml_filepath(media, 'show')
             Log('YAML show : %s', filepath_list)
-            if filepath_list['show'] is None and filepath_list['seasons'] == False:
+            # Y 면 기본적으로 어느정도 세팅한다... YD만 하지 말고
+            # 니미 너무 오래걸린다.
+            if is_primary and metadata.id.startswith('Y'):
+                metadata.title = media.title
+                index_list = [index for index in media.seasons]
+                index_list = sorted(index_list)
+                for media_season_index in index_list:
+                    for media_episode_index in media.seasons[media_season_index].episodes:
+                        episode_meta = metadata.seasons[media_season_index].episodes[media_episode_index]
+                        epi_media_id = media.seasons[media_season_index].episodes[media_episode_index].id
+                        epi_media = self.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s' % epi_media_id)
+                        #Log(self.d(epi_media))
+                        filename = epi_media['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+                        episode_meta.title = os.path.splitext(os.path.basename(filename))[0]
+
+            if filepath_list['show'] is None and len(filepath_list['seasons'])  == 0:
+                #if metadata.id.startswith('YD'):
                 return False
-            
+
             data = {}
             try:
                 if filepath_list['show'] is not None:
@@ -105,7 +121,7 @@ class ModuleYamlShow(ModuelYamlBase):
                 metadata.original_title = self.get(data, 'original_title', metadata.title)
                 metadata.title_sort = unicodedata.normalize('NFKD', self.get(data, 'title_sort', metadata.title))
                 try: 
-                    metadata.originally_available_at = Datetime.ParseDate(self.get(data, 'originally_available_at', '1900-12-31')).date()
+                    metadata.originally_available_at = Datetime.ParseDate(self.get(data, 'originally_available_at', '')).date()
                 except Exception as e: 
                     Log(str(e))
             else:

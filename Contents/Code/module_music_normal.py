@@ -13,9 +13,12 @@ class ModuleMusicNormalArtist(AgentBase):
         try:
             if media.artist == '[Unknown Artist]': 
                 return
-            if media.artist == 'Various Artists':
-                #results.Append(MetadataSearchResult(id = 'Various%20Artists', name= '[Various Artists]', thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
-                results.Append(MetadataSearchResult(id='SD%s' % int(time.time()), name= '[Various Artists]', thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
+            if media.artist.startswith('Various Artists_'):
+                #results.Append(MetadataSearchResult(id='SD%s' % int(time.time()), name= '[Various Artists]', thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
+                results.Append(MetadataSearchResult(id='SD%s' % urllib.quote(media.artist.replace('Various Artists_', '')), name= '[Various Artists]', thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
+                return
+            if media.artist.startswith('VA_'):
+                results.Append(MetadataSearchResult(id='SE%s' % urllib.quote(media.artist[3:].encode('utf8')), name= media.artist[3:], thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
                 return
 
             if manual and media.artist is not None and (media.artist.startswith('SA')):
@@ -64,6 +67,11 @@ class ModuleMusicNormalArtist(AgentBase):
         code = metadata.id
         if code.startswith('SD'):
             metadata.title = '[Various Artists]'
+            metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
+            metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
+            return
+        if code.startswith('SE'):
+            metadata.title = urllib.unquote(code[2:])
             metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
             metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
             return
@@ -226,7 +234,10 @@ class ModuleMusicNormalAlbum(AgentBase):
         Log("media.tracks : %s", len(media.tracks))
 
         more_disc = True if len(media.children) != len(media.tracks) else False 
+
+        
         #for index in media.tracks:
+        artist_code = None
         for index, track_media in enumerate(media.children):
             track_key = track_media.id or index
 
@@ -235,11 +246,17 @@ class ModuleMusicNormalAlbum(AgentBase):
             if more_disc:
                 # 18 disc index 알수 있는 방법이 없음.
                 cu = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % track_key)
-                #Log(cu)
+                #Log(self.d(cu))
                 disc_index = cu['MediaContainer']['Metadata'][0]['parentIndex']
             else:
                 disc_index = 1
             
+            if artist_code == None:
+                tmp = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % track_key)
+                #Log(self.d(tmp))
+                # "grandparentGuid": "com.plexapp.agents.sjva_agent://SD1652027750?lang=ko",
+                artist_code = tmp['MediaContainer']['Metadata'][0]['grandparentGuid'].split('//')[1].split('?')[0].strip()
+
             #continue
             valid_track_keys.append(track_key)
             #Log(len(media.tracks[index].items))
@@ -313,8 +330,22 @@ class ModuleMusicNormalAlbum(AgentBase):
             #Log(key)
             #Log(valid_keys[key])
             metadata.tracks[key].lyrics.validate_keys(valid_keys[key])
-
-        metadata.title = '[%s] %s' % (data['album_type'], data['title'])
+        
+        # 에이전트에서 컬렉션 세팅이 안됨.
+        #if data['album_type'] == 'OST' and 'Part' in data['title'] and 'OST' in data['title']:
+        #    #data['collections'] = [data['title'].split('OST')[0].strip()]
+        #    metadata.collections.clear()
+        #    metadata.collections.add(data['title'].split('OST')[0].strip())
+        
+        #artist_code = media.parent_metadata.id
+        Log(artist_code)
+        Log(artist_code)
+        Log(artist_code)
+        Log(artist_code)
+        if artist_code.startswith('SD') or artist_code.startswith('SE'):
+            metadata.title = '%s' % (data['title'])
+        else:
+            metadata.title = '[%s] %s' % (data['album_type'], data['title'])
         return False
 
 

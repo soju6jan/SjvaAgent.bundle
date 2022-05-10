@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata
+import os, traceback, json, urllib, re, unicodedata, time
 from .agent_base import AgentBase
 from .module_music_normal import ModuleMusicNormalArtist, ModuleMusicNormalAlbum
 from .module_audiobook import ModuleAudiobookArtist, ModuleAudiobookAlbum
@@ -52,8 +52,13 @@ class AgentAlbum(Agent.Album):
         key = AgentBase.get_key(media)
         Log('Key : %s', key)
         ret = self.instance_list['Y'].search(results, media, lang, manual)
-        if ret or key == 'Y':
+        if ret: #처리했으면 True
             return
+        if ret == False and key == 'Y':
+            # 태그에서 읽는 것을 막기 위해 더미로 update타도록..
+            results.Append(MetadataSearchResult(id='YD%s'% int(time.time()), name=media.title, year='', score=100, thumb='', lang=lang))
+            return
+            
         self.instance_list[key].search(results, media, lang, manual)
         
 
@@ -64,6 +69,7 @@ class AgentAlbum(Agent.Album):
         
         if metadata.id[0] != 'Y':
             need_lyric = self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
+        
         
         need_lyric = False
         if need_lyric:

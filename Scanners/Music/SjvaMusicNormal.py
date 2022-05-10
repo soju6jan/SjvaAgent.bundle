@@ -52,21 +52,37 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
   if len(files) < 1: return
   albumTracks = []
   logger.debug('PATH: %s', path)
+  track_map = {}
   # Various Artists
-  va_flag = False
+  va_flag = None
 
   album_path = os.path.dirname(files[0])
+  match = re.match('(CD|DISC)\s?(?P<disc>\d+)', os.path.basename(album_path), re.IGNORECASE)
+  if match:
+    # CD 폴더는 한단계 위까지 검사해야하기 때문에..
+    album_path = os.path.dirname(os.path.dirname(files[0]))
   artist_path, album_name = os.path.split(album_path)
   cate_path, artist_name = os.path.split(artist_path)
-  if os.path.exists(os.path.join(cate_path, 'V.A')):
-    va_flag = True
-  elif os.path.exists(os.path.join(artist_path, 'V.A')):
-    va_flag = True
-  elif os.path.exists(os.path.join(album_path, 'V.A')):
-    va_flag = True
-  elif album_name.startswith('V.A'):
-    va_flag = True
+  
+  # V.A 파일은 반드시 cate root에만 있도록 수정
+  # 카테 / 아티스트 / 앨범 구조면 아티스명 살림
+  # 카테 / 앨범 구조만 VA로 리턴
+  # 즉 아티스트폴더인줄 알았더니 V.A가 있다면 카테고리 - 앨범임
+  # 다만 카테 / 아티스트 / 앨범일 때 아티스트 명은 넘기지만 검색을 하지 않도록 한다.
+  
+  # 카테 / 중간카테 / 앨범 : 무조건 VA 처리를 위한 파일 - VA2
+  if os.path.exists(os.path.join(cate_path, 'VA1')):
+    va_flag = "va_depth1"
+  elif os.path.exists(os.path.join(cate_path, 'VA2')):
+    va_flag = "va_depth2_artist_dummy"
+  elif os.path.exists(os.path.join(artist_path, 'VA2')):
+    va_flag = "va_depth1"
+  #elif os.path.exists(os.path.join(album_path, 'V.A')):
+  #  va_flag = True
+  #elif album_name.startswith('V.A'):
+  #  va_flag = True
 
+  last_track_index = 0
 
   for f in files:
     try:
@@ -98,6 +114,7 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
       if track == None:
         # See if we have a tracknumber in the title; if so, extract and strip it.
         file = os.path.splitext(os.path.basename(f))[0]
+        # 18 4MEN - The 3rd Generation (Special Album) - 03. Memories
         m = re.match("^([0-9]{1,3})([^0-9].*)$", file) or re.match(".*[ \-\.]+([0-9]{2})[ \-\.]+([^0-9].*)$", file) or re.match("^[a-f]([0-9]{2})[ \-\.]+([^0-9].*)$", file)
         if m:
           track, new_title = int(m.group(1)), m.group(2)
@@ -122,13 +139,14 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
       #  (artist, title) = title.split(' - ')
       #  if len(artist) == 0: artist = '[Unknown Artist]'
       
-      if parentDir and parentDir.count(' - ') == 1 and (artist == '[Unknown Artist]' or album == '[Unknown Album]'):  #see if we can parse the folder dir for artist - album
-        (pathArtist, pathAlbum) = parentDir.split(' - ')
-        if artist == '[Unknown Artist]': artist = re.sub("\[.*?\]", '', pathArtist).strip() 
-        if album == '[Unknown Album]': album = re.sub("\[.*?\]", '', pathAlbum).strip() 
+      # 이것도 앨범제목에 - 이 들어가는게 너무 많음.
+      #if parentDir and parentDir.count(' - ') == 1 and (artist == '[Unknown Artist]' or album == '[Unknown Album]'):  #see if we can parse the folder dir for artist - album
+      #  (pathArtist, pathAlbum) = parentDir.split(' - ')
+      #  if artist == '[Unknown Artist]': artist = re.sub("\[.*?\]", '', pathArtist).strip() 
+      #  if album == '[Unknown Album]': album = re.sub("\[.*?\]", '', pathAlbum).strip() 
       
       disc = '1'
-      match = re.match('CD(?P<disc>\d+)', parentDir, re.IGNORECASE)
+      match = re.match('(CD|DISC)\s?(?P<disc>\d+)', parentDir, re.IGNORECASE)
       if match:
         disc = match.group('disc')
         (allbutParentDir, parentDir) = os.path.split(allbutParentDir)
@@ -139,8 +157,17 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
         (allbutParentDir2, parentDir2) = os.path.split(allbutParentDir)
         artist = re.sub("\[.*?\]", '', parentDir2).strip()
 
-      if va_flag:
-        artist = 'Various Artists'
+      if va_flag == 'va_depth2_artist_dummy':
+        artist = 'VA_%s' % artist
+      elif va_flag == 'va_depth1':
+        artist = 'Various Artists_%s' % (cleanPass(album))
+
+      if track != None:
+        last_track_index = int(track)
+      else:
+        track = last_track_index + 1
+        last_track_index = track
+
       #make sure our last move is to encode to utf-8 before handing text back.
       logger.debug('=============================================')
       logger.debug('LAST artist : %s', cleanPass(artist))
@@ -150,6 +177,9 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
       logger.debug('LAST disc : %s', disc)
       logger.debug('LAST album_artist : %s', cleanPass(album_artist))
 
+      
+
+      disc = str(add_map(track_map, disc, track))
 
       t = Media.Track(cleanPass(artist), cleanPass(album), cleanPass(title), track, disc=disc, album_artist=cleanPass(album_artist), guid=None, album_guid=None)
       t.parts.append(f)
@@ -231,3 +261,15 @@ def cleanPass(t):
 
 def getInfoFromTag(filename, language):
   return (None, None, None, None, None, None, None)
+
+
+def add_map(track_map, disc, track):
+  disc = int(disc)
+  track = int(track)
+  while True:
+    if str(disc) not in track_map:
+      track_map[str(disc)] = []
+    if track not in track_map[str(disc)]:
+      track_map[str(disc)].append(track)
+      return str(disc)
+    disc = disc + 1

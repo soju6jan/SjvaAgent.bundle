@@ -124,8 +124,22 @@ class ModuleYamlAlbum(ModuelYamlBase):
             # collections 반영안됨
             # gernres등은 바로 반영
             filepath = self.get_yaml_filepath(media, 'album')
-            Log(u"앨범 업데이트 : %s", filepath)
+            Log(u"앨범 업데이트2 : %s", filepath)
             if filepath is None:
+                code = metadata.id
+                if code.startswith('YD'): #더미
+                    metadata.title = media.title
+                    #metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
+                    metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
+
+                    valid_track_keys = []
+                    for index, track_media in enumerate(media.children):
+                        #Log(track_media.title)
+                        track_key = track_media.id or index
+                        valid_track_keys.append(track_key)
+                        track_meta = metadata.tracks[track_key]
+                        track_meta.title = track_media.title
+                    metadata.tracks.validate_keys(valid_track_keys)
                 return
             data = self.yaml_load(filepath)
             try: Log(self.d(data))
@@ -154,13 +168,13 @@ class ModuleYamlAlbum(ModuelYamlBase):
             for index in media.tracks:
                 track_key = media.tracks[index].id or int(index)
                 valid_track_keys.append(track_key)
-                Log(track_key)
+                #Log(track_key)
                 filename = os.path.splitext(os.path.basename(media.tracks[index].items[0].parts[0].file))[0]
-                Log(filename)
+                #Log(filename)
                 t = metadata.tracks[track_key]
-                Log('aaaaaaaaaaaaaaaaaaaaaaaa')
-                Log(t.title)
-                Log(t.artist)
+                #Log('aaaaaaaaaaaaaaaaaaaaaaaa')
+                #Log(t.title)
+                #Log(t.artist)
                 
                 #self.set_data(metadata, data, 'extras', is_primary)
                 #t.title = filename.strip(' -._')

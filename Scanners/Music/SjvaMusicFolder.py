@@ -60,8 +60,8 @@ def Process(path, files, mediaList, subdirs, language=None, root=None):
       tmp, artist = os.path.split(tmp)
       basename = os.path.splitext(basename)[0]
 
-      if album.count(' - ') == 1:
-        artist, album = album.split(' - ')
+      #if album.count(' - ') == 1:
+      #  artist, album = album.split(' - ')
 
       if artist:
         artist = re.sub("\[.*?\]", '', artist).strip() 

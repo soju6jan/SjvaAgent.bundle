@@ -58,20 +58,54 @@ class ModuelYamlBase(AgentBase):
             elif content_type == 'album':
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
-                yaml_filepath = os.path.join(os.path.dirname(filename), 'album.yaml')
+                parent = os.path.split(os.path.dirname(filename))[1]
+                match = re.match('CD(?P<disc>\d+)', parent, re.IGNORECASE)
+                if match:
+                    album_root = os.path.dirname(os.path.dirname(filename))
+                else:
+                    album_root = os.path.dirname(filename)
+
+                #yaml_filepath = os.path.join(os.path.dirname(filename), 'album.yaml')
+                yaml_filepath = os.path.join(album_root, 'album.yaml')
+
                 if os.path.exists(yaml_filepath):
                     return yaml_filepath
             elif content_type == 'artist':
                 data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % data['MediaContainer']['Metadata'][0]['Children']['Metadata'][0]['ratingKey'])
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
-                yaml_filepath = os.path.join(os.path.dirname(filename), 'artist.yaml')
+                parent = os.path.split(os.path.dirname(filename))[1]
+                match = re.match('CD(?P<disc>\d+)', parent, re.IGNORECASE)
+                    
+                if match:
+                    album_root = os.path.dirname(os.path.dirname(filename))
+                else:
+                    album_root = os.path.dirname(filename)
+                album_basename = os.path.basename(album_root)
+                if False and album_basename.count(' - ') == 1:
+                    yaml_filepath = os.path.join(album_root, 'artist.yaml')
+                else:
+                    # 2022-05-02
+                    # V.A 가있다는 것은 카테-앨범 구조라고 픽스
+                    # 없다면 카테 - 아티스트 - 앨범
+                    # OST 컴필 등
+                    artist_root = os.path.dirname(album_root)
+                    cate_root = os.path.dirname(artist_root)
+                    va_flag = None
+                    if os.path.exists(os.path.join(cate_root, 'VA1')):
+                        va_flag = "va_depth1"
+                    elif os.path.exists(os.path.join(cate_root, 'VA2')):
+                        va_flag = "va_depth2_artist_dummy"
+                    elif os.path.exists(os.path.join(artist_root, 'VA2')):
+                        va_flag = "va_depth1"
+
+                    if va_flag == None or va_flag == 'va_depth2_artist_dummy':
+                        yaml_filepath = os.path.join(artist_root, 'artist.yaml')
+                    elif va_flag == 'va_depth1':
+                        yaml_filepath = os.path.join(album_root, 'artist.yaml')
+
                 if os.path.exists(yaml_filepath):
                     return yaml_filepath
-                yaml_filepath = os.path.join(os.path.dirname(os.path.dirname(filename)), 'artist.yaml')
-                if os.path.exists(yaml_filepath):
-                    return yaml_filepath
-
-
+                
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())

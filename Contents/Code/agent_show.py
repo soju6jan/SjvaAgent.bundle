@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata
+import os, traceback, json, urllib, re, unicodedata, time
 from .agent_base import AgentBase
 from .module_ktv import ModuleKtv
 from .module_ftv import ModuleFtv
@@ -22,7 +22,11 @@ class AgentShow(Agent.TV_Shows):
         key = AgentBase.get_key(media)
         Log('Key : %s', key)
         ret = self.instance_list['Y'].search(results, media, lang, manual)
-        if ret or key == 'Y':
+        if ret:
+            return
+        if ret == False and key == 'Y':
+            # 태그에서 읽는 것을 막기 위해 더미로 update타도록..
+            results.Append(MetadataSearchResult(id='YD%s'% int(time.time()), name=media.title, year='', score=100, thumb='', lang=lang))
             return
         ret = self.instance_list[key].search(results, media, lang, manual)
         if key == 'F':
