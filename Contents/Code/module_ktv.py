@@ -398,7 +398,7 @@ class ModuleKtv(AgentBase):
                 Log('search_title : %s', search_title)
                 Log('search_code : %s', search_code)
 
-                Log('only_season_title_show : %s', only_season_title_show)
+                Log('only_season_title_show : %s', only_season_title_show) 
                 #self.get_json_filepath(media) 
                 #self.get_json_filepath(media.seasons[media_season_index])
 
@@ -485,6 +485,7 @@ class ModuleKtv(AgentBase):
             # 2021-09-15 주석처리함. 임의의 시즌으로 분할하는 경우를 고려
             #if not flag_media_season:
             #    return
+            
             url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
             data = JSON.ObjectFromURL(url)
             section_id = data['MediaContainer']['librarySectionID']
@@ -493,25 +494,32 @@ class ModuleKtv(AgentBase):
                 Log('media_season_index is %s', media_season_index)
                 if media_season_index == '0':
                     continue
-                filepath = media.seasons[media_season_index].all_parts()[0].file
-                tmp = os.path.basename(os.path.dirname(filepath))
-                season_title = None
-                if tmp != metadata.title:
-                    Log(tmp)
-                    match = Regex(r'(?P<season_num>\d{1,8})\s*(?P<season_title>.*?)$').search(tmp)
-                    if match:
-                        Log('season_num : %s', match.group('season_num'))
-                        Log('season_title : %s', match.group('season_title'))
-                        if match.group('season_num') == media_season_index and match.group('season_title') is not None:
-                            season_title = match.group('season_title')
-                metadata_season = metadata.seasons[media_season_index]
-                if season_title is None:
-                    url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[media_season_index].id, urllib.quote(metadata_season.summary.encode('utf8')), token)
-                else:
-                    url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[media_season_index].id, urllib.quote(season_title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
-                request = PutRequest(url)
-                response = urllib2.urlopen(request)
-     
+                try:
+                    filepath = media.seasons[media_season_index].all_parts()[0].file
+                    tmp = os.path.basename(os.path.dirname(filepath))
+                    season_title = None
+                    if tmp != metadata.title:
+                        Log(tmp)
+                        match = Regex(r'(?P<season_num>\d{1,8})\s*(?P<season_title>.*?)$').search(tmp)
+                        if match:
+                            Log('season_num : %s', match.group('season_num'))
+                            Log('season_title : %s', match.group('season_title'))
+                            if match.group('season_num') == media_season_index and match.group('season_title') is not None:
+                                season_title = match.group('season_title')
+                    metadata_season = metadata.seasons[media_season_index]
+                    if season_title is None:
+                        if metadata_season.summary != None:
+                            url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[media_season_index].id, urllib.quote(metadata_season.summary.encode('utf8')), token)
+                    else:
+                        if metadata_season.summary == None:
+                            metadata_season.summary = ''
+                        url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[media_season_index].id, urllib.quote(season_title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
+
+                    request = PutRequest(url)
+                    response = urllib2.urlopen(request)
+                except Exception as e: 
+                    Log('Exception:%s', e)
+                    Log(traceback.format_exc())
         except Exception as e: 
             Log('Exception:%s', e)
             Log(traceback.format_exc())
