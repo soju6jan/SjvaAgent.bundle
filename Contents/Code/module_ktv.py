@@ -378,103 +378,108 @@ class ModuleKtv(AgentBase):
                 Log('media_season_index is %s', media_season_index)
                 # 2022-04-05
                 search_media_season_index = media_season_index
-                if len(str(media_season_index)) == 3:
-                    search_media_season_index = str(media_season_index)[1:]
+                if len(str(media_season_index)) > 2:
+                    search_media_season_index = str(media_season_index)[-2:]
 
                 if search_media_season_index in ['0', '00']:
                     continue
                 search_title = media.title.replace(u'[종영]', '')
                 search_title = search_title.split('|')[0].strip()
                 search_code = metadata.id            
-                if flag_media_season and 'daum' in search_data and len(search_data['daum']['series']) > 1:
-                    try: #사당보다 먼 의정부보다 가까운 3
-                        search_title = search_data['daum']['series'][int(search_media_season_index)-1]['title']
-                        search_code = search_data['daum']['series'][int(search_media_season_index)-1]['code']
-                    except:
-                        pass
-
+                #if flag_media_season and 'daum' in search_data and len(search_data['daum']['series']) > 1:
+                only_season_title_show = False
+                try: #사당보다 먼 의정부보다 가까운 3
+                    search_title = search_data['daum']['series'][int(search_media_season_index)-1]['title']
+                    search_code = search_data['daum']['series'][int(search_media_season_index)-1]['code']
+                except:
+                    only_season_title_show = True
+                
                 Log('flag_media_season : %s', flag_media_season)
                 Log('search_title : %s', search_title)
                 Log('search_code : %s', search_code)
+
+                Log('only_season_title_show : %s', only_season_title_show)
                 #self.get_json_filepath(media) 
                 #self.get_json_filepath(media.seasons[media_season_index])
 
-                meta_info = None
-                if info_json is not None and search_code in info_json:
-                    # 방송중이라면 저장된 정보를 무시해야 새로운 에피를 갱신
-                    if info_json[search_code]['status'] == 2:
-                        meta_info = info_json[search_code]
-                if meta_info is None:
-                    meta_info = self.send_info(self.module_name, search_code, title=search_title)
-                    if meta_info is not None and is_write_json:
-                        #self.append_info(media, search_code, meta_info)
-                        info_json[search_code] = meta_info
-  
-                #Log(json.dumps(meta_info, indent=4))
+                if only_season_title_show == False:
 
-                if flag_media_season:
-                    metadata.title = media.title.split('|')[0].strip()
-                else:
-                    metadata.title = meta_info['title']
-                    
-
-                metadata.original_title = metadata.title                  
-                metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
-                
-                if flag_media_season == False and meta_info['status'] == 2 and  module_prefs['end_noti_filepath'] != '':
-                    parts = media.seasons[media_season_index].all_parts()
-                    end_noti_filepath = module_prefs['end_noti_filepath'].split('|')
-                    for tmp in end_noti_filepath:
-                        if parts[0].file.find(tmp) != -1:
-                            metadata.title = u'[종영]%s' % metadata.title
-                            break
-
-                metadata_season = metadata.seasons[media_season_index]
-                self.update_info(metadata, metadata_season, meta_info)
-                
-                
-                # 포스터
-                # Get episode data.
-                @parallelize
-                def UpdateEpisodes():
-                    for media_episode_index in media.seasons[media_season_index].episodes:
-                        episode = metadata.seasons[media_season_index].episodes[media_episode_index]
-
-                        @task
-                        def UpdateEpisode(episode=episode, media_season_index=media_season_index, media_episode_index=media_episode_index, media=media):
-                            frequency = False
-                            show_epi_info = None
-                            if media_episode_index in meta_info['extra_info']['episodes']:
-                                show_epi_info = meta_info['extra_info']['episodes'][media_episode_index]
-                                self.update_episode(show_epi_info, episode, media, info_json, is_write_json)
-                            else:
-                                #에피정보가 없다면 
-                                match = Regex(r'\d{4}-\d{2}-\d{2}').search(media_episode_index)
-                                if match:
-                                    for key, value in meta_info['extra_info']['episodes'].items():
-                                        if ('daum' in value and value['daum']['premiered'] == media_episode_index) or ('tving' in value and value['tving']['premiered'] == media_episode_index) or ('wavve' in value and value['wavve']['premiered'] == media_episode_index):
-                                            show_epi_info = value
-                                            self.update_episode(show_epi_info, episode, media, info_json, is_write_json, frequency=key)
-                                            break
-                            if show_epi_info is None:
-                                return
-
-                            episode.directors.clear()
-                            episode.producers.clear()
-                            episode.writers.clear()
-                            for item in meta_info['credits']:
-                                meta = episode.writers.new()
-                                meta.role = item['role']
-                                meta.name = item['name']
-                                meta.photo = item['thumb']
-                            for item in meta_info['director']:
-                                meta = episode.directors.new()
-                                meta.role = item['role']
-                                meta.name = item['name']
-                                meta.photo = item['thumb']
+                    meta_info = None
+                    if info_json is not None and search_code in info_json:
+                        # 방송중이라면 저장된 정보를 무시해야 새로운 에피를 갱신
+                        if info_json[search_code]['status'] == 2:
+                            meta_info = info_json[search_code]
+                    if meta_info is None:
+                        meta_info = self.send_info(self.module_name, search_code, title=search_title)
+                        if meta_info is not None and is_write_json:
+                            #self.append_info(media, search_code, meta_info)
+                            info_json[search_code] = meta_info
     
+                    #Log(json.dumps(meta_info, indent=4))
+
+                    if flag_media_season:
+                        metadata.title = media.title.split('|')[0].strip()
+                    else:
+                        metadata.title = meta_info['title']
+                        
+
+                    metadata.original_title = metadata.title                  
+                    metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
+                    
+                    if flag_media_season == False and meta_info['status'] == 2 and  module_prefs['end_noti_filepath'] != '':
+                        parts = media.seasons[media_season_index].all_parts()
+                        end_noti_filepath = module_prefs['end_noti_filepath'].split('|')
+                        for tmp in end_noti_filepath:
+                            if parts[0].file.find(tmp) != -1:
+                                metadata.title = u'[종영]%s' % metadata.title
+                                break
+
+                    metadata_season = metadata.seasons[media_season_index]
+                    self.update_info(metadata, metadata_season, meta_info)
+                    
+                    
+                    # 포스터
+                    # Get episode data.
+                    @parallelize
+                    def UpdateEpisodes():
+                        for media_episode_index in media.seasons[media_season_index].episodes:
+                            episode = metadata.seasons[media_season_index].episodes[media_episode_index]
+
+                            @task
+                            def UpdateEpisode(episode=episode, media_season_index=media_season_index, media_episode_index=media_episode_index, media=media):
+                                frequency = False
+                                show_epi_info = None
+                                if media_episode_index in meta_info['extra_info']['episodes']:
+                                    show_epi_info = meta_info['extra_info']['episodes'][media_episode_index]
+                                    self.update_episode(show_epi_info, episode, media, info_json, is_write_json)
+                                else:
+                                    #에피정보가 없다면 
+                                    match = Regex(r'\d{4}-\d{2}-\d{2}').search(media_episode_index)
+                                    if match:
+                                        for key, value in meta_info['extra_info']['episodes'].items():
+                                            if ('daum' in value and value['daum']['premiered'] == media_episode_index) or ('tving' in value and value['tving']['premiered'] == media_episode_index) or ('wavve' in value and value['wavve']['premiered'] == media_episode_index):
+                                                show_epi_info = value
+                                                self.update_episode(show_epi_info, episode, media, info_json, is_write_json, frequency=key)
+                                                break
+                                if show_epi_info is None:
+                                    return
+
+                                episode.directors.clear()
+                                episode.producers.clear()
+                                episode.writers.clear()
+                                for item in meta_info['credits']:
+                                    meta = episode.writers.new()
+                                    meta.role = item['role']
+                                    meta.name = item['name']
+                                    meta.photo = item['thumb']
+                                for item in meta_info['director']:
+                                    meta = episode.directors.new()
+                                    meta.role = item['role']
+                                    meta.name = item['name']
+                                    meta.photo = item['thumb']
+        
             # 시즌 title, summary
-            if is_write_json:
+            if is_write_json and only_season_title_show == False:
                 self.save_info(media, info_json)
             
             # 2021-09-15 주석처리함. 임의의 시즌으로 분할하는 경우를 고려

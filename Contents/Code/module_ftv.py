@@ -23,10 +23,12 @@ class ModuleFtv(AgentBase):
                 else:
                     info_json = self.get_info_json(media)
                     if info_json is not None:
-                        code = info_json['show']['code']
-                        meta = MetadataSearchResult(id=code, name=info_json['show']['title'], year=info_json['show']['year'], score=100, thumb="", lang=lang)
-                        results.Append(meta)
-                        return
+                        # ftv에서 ktv json을 사용하려고할때 에러
+                        if 'show' in info_json:
+                            code = info_json['show']['code']
+                            meta = MetadataSearchResult(id=code, name=info_json['show']['title'], year=info_json['show']['year'], score=100, thumb="", lang=lang)
+                            results.Append(meta)
+                            return
 
 
             media.show = unicodedata.normalize('NFC', unicode(media.show)).strip()
@@ -89,7 +91,8 @@ class ModuleFtv(AgentBase):
                     def UpdateSeason(media_season_index=media_season_index,  media=media):
                         Log('UpdateSeason : %s', media_season_index)
                         metadata_season = metadata.seasons[media_season_index]
-                        season_code = '%s_%s' % (metadata.id, media_season_index)
+                        media_season_index_for_meta = int(media_season_index) % 100
+                        season_code = '%s_%s' % (metadata.id, media_season_index_for_meta)
                         if info_json is not None and season_code in info_json:
                             season_meta_info = info_json[season_code]
                         else:
@@ -266,18 +269,46 @@ class ModuleFtv(AgentBase):
         metadata_season.summary = meta_info['plot']
         metadata_season.title = meta_info['season_name']
 
-        # 시즌 title, summary
-        try:
-            url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
-            data = JSON.ObjectFromURL(url)
-            section_id = data['MediaContainer']['librarySectionID']
-            token = self.get_token()
-            url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[season_no].id, urllib.quote(metadata_season.title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
-            request = PutRequest(url)
-            response = urllib2.urlopen(request)
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
+        # 2022-05-12
+        if True or int(season_no) > 100:
+            # 시즌 title, summary
+            try:
+                url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
+                data = JSON.ObjectFromURL(url)
+                section_id = data['MediaContainer']['librarySectionID']
+                token = self.get_token()
+
+                filepath = media.seasons[season_no].all_parts()[0].file
+                tmp = os.path.basename(os.path.dirname(filepath))
+                season_title = metadata_season.title
+                
+                match = re.search(r'^(Season|시즌)\s(?P<force_season_num>\d{1,8})((\s|\.)(?P<season_title>.*?))?$', tmp, re.IGNORECASE)
+                
+                #match = Regex(r'(?P<season_num>\d{1,8})\s*(?P<season_title>.*?)$').search(tmp)
+                if match:
+                    if match.group('force_season_num') == season_no and match.group('season_title') is not None:
+                        season_title = match.group('season_title')
+                
+                url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[season_no].id, urllib.quote(season_title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
+                request = PutRequest(url)
+                response = urllib2.urlopen(request)
+            except Exception as e: 
+                Log('Exception:%s', e)
+                Log(traceback.format_exc())
+
+        else:
+            # 시즌 title, summary
+            try:
+                url = 'http://127.0.0.1:32400/library/metadata/%s' % media.id
+                data = JSON.ObjectFromURL(url)
+                section_id = data['MediaContainer']['librarySectionID']
+                token = self.get_token()
+                url = 'http://127.0.0.1:32400/library/sections/%s/all?type=3&id=%s&title.value=%s&summary.value=%s&X-Plex-Token=%s' % (section_id, media.seasons[season_no].id, urllib.quote(metadata_season.title.encode('utf8')), urllib.quote(metadata_season.summary.encode('utf8')), token)
+                request = PutRequest(url)
+                response = urllib2.urlopen(request)
+            except Exception as e: 
+                Log('Exception:%s', e)
+                Log(traceback.format_exc())
 
 
 
