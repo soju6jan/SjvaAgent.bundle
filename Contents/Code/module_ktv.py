@@ -383,16 +383,25 @@ class ModuleKtv(AgentBase):
 
                 if search_media_season_index in ['0', '00']:
                     continue
+                
+                #Log(self.d(search_data['daum']['series']))
                 search_title = media.title.replace(u'[종영]', '')
                 search_title = search_title.split('|')[0].strip()
+                Log('search_title2 : %s', search_title)
+                #Log('search_code2 : %s', search_code)
+
+                # 신과함께3 단일 미디어파일이면 search_media_season_index 1이여서 시즌1이 매칭됨.
+                # 단일 미디어 파일에서는 사용하지 않도록함.
+                # 어짜피 여러 시즌버전을 넣는다면 신과함꼐3도 시즌3으로 바꾸어야함.
                 search_code = metadata.id            
-                #if flag_media_season and 'daum' in search_data and len(search_data['daum']['series']) > 1:
                 only_season_title_show = False
-                try: #사당보다 먼 의정부보다 가까운 3
-                    search_title = search_data['daum']['series'][int(search_media_season_index)-1]['title']
-                    search_code = search_data['daum']['series'][int(search_media_season_index)-1]['code']
-                except:
-                    only_season_title_show = True
+                if flag_media_season and 'daum' in search_data and len(search_data['daum']['series']) > 1:
+                    try: #사당보다 먼 의정부보다 가까운 3
+                        Log(len(search_data['daum']['series']))
+                        search_title = search_data['daum']['series'][int(search_media_season_index)-1]['title']
+                        search_code = search_data['daum']['series'][int(search_media_season_index)-1]['code']
+                    except:
+                        only_season_title_show = True
                 
                 Log('flag_media_season : %s', flag_media_season)
                 Log('search_title : %s', search_title)
