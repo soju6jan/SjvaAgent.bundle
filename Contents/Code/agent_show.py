@@ -26,7 +26,8 @@ class AgentShow(Agent.TV_Shows):
             return
         if ret == False and key == 'Y':
             # 태그에서 읽는 것을 막기 위해 더미로 update타도록..
-            results.Append(MetadataSearchResult(id='YD%s'% int(time.time()), name=media.title, year='', score=100, thumb='', lang=lang))
+            # 2022-05-26 tiem.time()이 같을 수 있음..
+            results.Append(MetadataSearchResult(id='YD%s'% str(time.time()).replace('.', ''), name=media.title, year='', score=100, thumb='', lang=lang))
             return
         ret = self.instance_list[key].search(results, media, lang, manual)
         if key == 'F':
