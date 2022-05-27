@@ -288,6 +288,9 @@ class ModuleMusicNormalAlbum(AgentBase):
             #track_key = media.tracks[index].id or int(index)
             #valid_track_keys.append(track_key)
             #t = metadata.tracks[track_key]
+
+            # 2022-05-27 멜론 좋아요
+            track_meta.rating_count = track_data['rating_count']
             if track_data['singer'] != '':
                 #track_meta.original_title = track_data['singer']
                 if track_data['title'] == track_media.title:
