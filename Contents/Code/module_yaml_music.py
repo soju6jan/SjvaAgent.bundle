@@ -2,6 +2,7 @@
 import os, unicodedata, traceback, io, time, random
 from .module_yaml_base import ModuelYamlBase
 import yaml
+from collections import defaultdict
 
 class ModuleYamlArtist(ModuelYamlBase):
     module_name = 'yaml_artist'
@@ -165,6 +166,7 @@ class ModuleYamlAlbum(ModuelYamlBase):
 
             # 이것을 꼭 해줘야 트랙이 소속됨.
             valid_track_keys = []
+            valid_keys = defaultdict(list)
             for index in media.tracks:
                 track_key = media.tracks[index].id or int(index)
                 valid_track_keys.append(track_key)
@@ -179,6 +181,10 @@ class ModuleYamlAlbum(ModuelYamlBase):
                 #self.set_data(metadata, data, 'extras', is_primary)
                 #t.title = filename.strip(' -._')
                 #t.original_title = data.get('author', '')
+                metadata.tracks[track_key].original_title = data['artist']
+                url = 'http://127.0.0.1:32400/:/plugins/com.plexapp.agents.sjva_agent/function/yaml_lyric?track_key={track_key}'.format(track_key = track_key)
+                metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format='lrc')
+                valid_keys[track_key].append(url)
             metadata.tracks.validate_keys(valid_track_keys)
             return self.get_bool(data, 'lyric', True)
         except Exception as e: 
