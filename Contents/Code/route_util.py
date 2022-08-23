@@ -113,7 +113,24 @@ def music_normal_lyric(mode, song_id, track_key):
             lyric = str(traceback.format_exc())
     return lyric
 
-
+@route('yaml_lyric') 
+def yaml_lyric(track_key):
+    Log('track_key : %s' % (track_key))
+    lyric = ''
+    try:
+        url = 'http://127.0.0.1:32400/library/metadata/%s' % track_key
+        data = JSON.ObjectFromURL(url, headers={'accept' : 'application/json'})
+        # Log(d(data))
+        filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
+        if os.path.isfile(os.path.join(os.path.dirname(filename),'album.yaml')):
+            import yaml, io
+            data = yaml.load(io.open(os.path.join(os.path.dirname(filename),'album.yaml'), encoding='utf-8'), Loader=yaml.BaseLoader)
+            # Log(d(data))
+            lyric = data['lyrics'][os.path.basename(filename)[0]]
+    except Exception as e: 
+        Log('Exception:%s', e)
+        lyric = str(traceback.format_exc())
+    return lyric
 
 def d(data):
     return json.dumps(data, indent=4, ensure_ascii=False)
