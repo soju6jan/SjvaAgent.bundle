@@ -181,10 +181,27 @@ class ModuleYamlAlbum(ModuelYamlBase):
                 #self.set_data(metadata, data, 'extras', is_primary)
                 #t.title = filename.strip(' -._')
                 #t.original_title = data.get('author', '')
-                metadata.tracks[track_key].original_title = data['artist']
-                url = 'http://127.0.0.1:32400/:/plugins/com.plexapp.agents.sjva_agent/function/yaml_lyric?track_key={track_key}'.format(track_key = track_key)
-                metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format='lrc')
-                valid_keys[track_key].append(url)
+                more_disc = True if len(media.children) != len(media.tracks) else False 
+                for index, track_media in enumerate(media.children):
+                    track_key = track_media.id or index
+                    if more_disc:
+                        cu = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % track_key)
+                        #Log(self.d(cu))
+                        disc_index = cu['MediaContainer']['Metadata'][0]['parentIndex']
+                    else:
+                        disc_index = 1
+                    try:
+                        track_data = data['tracks'][disc_index-1][int(track_media.index)-1]
+                    except:
+                        track_data = None
+                        Log("ERROR: disc_index %s %s", disc_index, track_media.index)
+                    if track_data == None:
+                        continue
+                    metadata.tracks[track_key].original_title = data['artist']
+                    url = 'http://127.0.0.1:32400/:/plugins/com.plexapp.agents.sjva_agent/function/yaml_lyric?track_key={track_key}'.format(track_key = track_key)
+                    format = track_data['lyrics']['format']
+                    metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format=format)
+                    valid_keys[track_key].append(url)
             metadata.tracks.validate_keys(valid_track_keys)
             return self.get_bool(data, 'lyric', True)
         except Exception as e: 
