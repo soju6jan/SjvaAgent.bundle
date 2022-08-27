@@ -1,6 +1,9 @@
-VERSION = '2022.08.07'
+VERSION = '2022.08.27'
 
 """
+2022.08.27
+  - yaml music 트랙 정보 추가
+
 2022.08.07
   - add service m3u8
 

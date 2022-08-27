@@ -7,7 +7,8 @@ class ModuelYamlBase(AgentBase):
     
     def get_yaml_filepath(self, media, content_type):
         try:
-            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % media.id)
+            metadata_key = media if type(media) == type('') else media.id
+            data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % metadata_key)
             section_id = str(data['MediaContainer']['librarySectionID'])
             #Log(self.d(data))
             """
@@ -56,7 +57,7 @@ class ModuelYamlBase(AgentBase):
                                 filepath_list['seasons'].append(season_yaml_filepath)
                     return filepath_list
             elif content_type == 'album':
-                data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % media.id)
+                data = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s/children' % metadata_key)
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
                 parent = os.path.split(os.path.dirname(filename))[1]
                 match = re.match('CD(?P<disc>\d+)', parent, re.IGNORECASE)
