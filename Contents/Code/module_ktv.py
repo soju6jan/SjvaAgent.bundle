@@ -31,11 +31,15 @@ class ModuleKtv(AgentBase):
                 return
 
             if manual and media.show is not None and media.show.startswith('K'):
-                code, title = media.show.split('|')
-                if code != 'KTV':
-                    meta = MetadataSearchResult(id=code, name=title, year='', score=100, thumb="", lang=lang)
-                    results.Append(meta)
-                    return
+                # 2022-11-18 KBS 같은 경우
+                try:
+                    code, title = media.show.split('|')
+                    if code != 'KTV':
+                        meta = MetadataSearchResult(id=code, name=title, year='', score=100, thumb="", lang=lang)
+                        results.Append(meta)
+                        return
+                except:
+                    pass
             
             # KTV|수당영웅
             Log('SEARCH 0: %s' % media.show)

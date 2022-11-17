@@ -67,7 +67,7 @@ class ModuleYamlShow(ModuelYamlBase):
                         filename = epi_media['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
                         episode_meta.title = os.path.splitext(os.path.basename(filename))[0]
 
-            if filepath_list['show'] is None and len(filepath_list['seasons'])  == 0:
+            if filepath_list == None or (filepath_list['show'] is None and len(filepath_list['seasons'])  == 0):
                 #if metadata.id.startswith('YD'):
                 return False
 
