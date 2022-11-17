@@ -113,6 +113,18 @@ def music_normal_lyric(mode, song_id, track_key):
             lyric = str(traceback.format_exc())
     return lyric
 
+@route('/music_normal_lyric') 
+def yaml_lyric(track_key, lyric_index, album_key, track_code, disc_index, track_index):
+    lyric = ''
+    try:
+        from .module_yaml_music import ModuleYamlAlbum 
+        mod = ModuleYamlAlbum()
+        data = mod.yaml_load(mod.get_yaml_filepath(album_key, 'album'))
+        lyric = data['tracks'][str(disc_index)][str(track_index)]['lyrics'][int(lyric_index)]['data']
+    except Exception as e: 
+        Log('Exception:%s', e)
+        lyric = str(traceback.format_exc())
+    return lyric
 
 
 def d(data):
