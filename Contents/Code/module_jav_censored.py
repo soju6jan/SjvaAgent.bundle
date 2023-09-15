@@ -151,7 +151,7 @@ class ModuleJavCensoredBase(AgentBase):
 
         if 'extras' in data and data['extras'] is not None:
             for item in data['extras']:
-                url = 'sjva://sjva.me/playvideo/%s' % (item['mode'], item['content_url'])
+                url = 'sjva://sjva.me/playvideo/%s|%s' % (item['mode'], item['content_url'])
                 metadata.extras.add(TrailerObject(url=url, title=self.change_html(data['extras'][0]['title']), originally_available_at=metadata.originally_available_at, thumb=landscape))
         return
 
