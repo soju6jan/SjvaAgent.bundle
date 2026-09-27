@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
-import os, unicodedata, traceback, io, time, random
+import time
 from .module_yaml_base import ModuleYamlBase
-import yaml
 from collections import defaultdict
+
+Log = Log # type: Framework.api.logkit.LogKit
+Datetime = Datetime # Framework.api.utilkit.DatetimeKit
+MetadataSearchResult = MetadataSearchResult # type: Framework.objects.MetadataSearchResult
+Proxy = Proxy # type: Framework.api.modelkit.ProxyKit
+
+VARIOUS_ARTISTS_POSTER = 'https://music.plex.tv/pixogs/various_artists_poster.jpg'
+
 
 class ModuleYamlArtist(ModuleYamlBase):
     module_name = 'yaml_artist'
-    
+
     def search(self, results, media, lang, manual, **kwargs):
         try:
             filepath = self.get_yaml_filepath(media, 'artist')
@@ -20,26 +27,25 @@ class ModuleYamlArtist(ModuleYamlBase):
                 return False
             timestamp = int(time.time())
             posters = self.get_media_list(data, 'posters')
-            thumb = posters[0]['url'] if posters else '' 
+            thumb = posters[0]['url'] if posters else ''
             code = self.get(data, 'code', 'YR%s' % timestamp).replace(' ', '')
             if not code.startswith('YR'):
                 code = 'YR%s' % code
             meta = MetadataSearchResult(
-                id=code, 
-                name=self.get(data, 'title', u'제목 - %s' % timestamp), 
-                year='', 
-                score=100, 
-                thumb=thumb, 
+                id=code,
+                name=self.get(data, 'title', u'제목 - %s' % timestamp),
+                year='',
+                score=100,
+                thumb=thumb,
                 lang=lang
             )
             summary = self.get(data, 'summary', '')
             meta.summary = summary
             meta.type = "movie"
-            results.Append(meta) 
+            results.Append(meta)
             return True
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())    
+        except Exception as exception:
+            Log.Exception(str(exception))
         return False
 
 
@@ -51,7 +57,7 @@ class ModuleYamlArtist(ModuleYamlBase):
                 return False
             data = self.yaml_load(filepath)
             try: Log(self.d(data))
-            except: pass
+            except Exception: pass
             self.set_data(metadata, data, 'title', is_primary)
             Log(metadata.title)
             self.set_data(metadata, data, 'title_sort', is_primary)
@@ -67,16 +73,15 @@ class ModuleYamlArtist(ModuleYamlBase):
             self.set_data_media(metadata, data, 'themes', is_primary)
             self.set_data(metadata, data, 'rating', is_primary)
             self.set_data_extras(metadata, data, 'extras', is_primary)
-            
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
 
-        
+        except Exception as e:
+            Log.Exception(str(e))
+
+
 
 class ModuleYamlAlbum(ModuleYamlBase):
     module_name = 'yaml_album'
-    
+
     def search(self, results, media, lang, manual, **kwargs):
         try:
             Log(media.title)
@@ -86,13 +91,13 @@ class ModuleYamlAlbum(ModuleYamlBase):
                 return False
             data = self.yaml_load(filepath)
             Log(self.d(data))
-            
+
             is_primary = self.get(data, 'primary', 'false')
             if is_primary != 'true':
                 return False
             timestamp = int(time.time())
             posters = self.get_media_list(data, 'posters')
-            thumb = posters[0]['url'] if posters else '' 
+            thumb = posters[0]['url'] if posters else ''
             code = self.get(data, 'code', 'YA%s' % timestamp).replace(' ', '')
             if not code.startswith('YA'):
                 code = 'YA%s' % code
@@ -100,21 +105,20 @@ class ModuleYamlAlbum(ModuleYamlBase):
             if year != '':
                 year = year.split('-')[0]
             meta = MetadataSearchResult(
-                id=code, 
-                name=self.get(data, 'title', u'제목 - %s' % timestamp), 
-                year=year, 
-                score=100, 
-                thumb=thumb, 
+                id=code,
+                name=self.get(data, 'title', u'제목 - %s' % timestamp),
+                year=year,
+                score=100,
+                thumb=thumb,
                 lang=lang
             )
             summary = self.get(data, 'summary', '')
             meta.summary = summary
             meta.type = "movie"
-            results.Append(meta) 
+            results.Append(meta)
             return True
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())    
+        except Exception as exception:
+            Log.Exception(str(exception))
         return False
 
 
@@ -131,7 +135,9 @@ class ModuleYamlAlbum(ModuleYamlBase):
                 if code.startswith('YD'): #더미
                     metadata.title = media.title
                     #metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
-                    metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
+                    valid_names = set()
+                    self.set_http_data(VARIOUS_ARTISTS_POSTER, metadata.posters, valid_names)
+                    metadata.posters.validate_keys(valid_names)
 
                     valid_track_keys = []
                     for index, track_media in enumerate(media.children):
@@ -144,7 +150,7 @@ class ModuleYamlAlbum(ModuleYamlBase):
                 return
             data = self.yaml_load(filepath)
             #try: Log(self.d(data))
-            #except: pass
+            #except Exception: pass
             self.set_data(metadata, data, 'title', is_primary)
             self.set_data(metadata, data, 'title_sort', is_primary)
             self.set_data(metadata, data, 'originally_available_at', is_primary)
@@ -170,7 +176,7 @@ class ModuleYamlAlbum(ModuleYamlBase):
             # 이것을 꼭 해줘야 트랙이 소속됨.
             valid_track_keys = []
             valid_keys = defaultdict(list)
-            more_disc = True if len(media.children) != len(media.tracks) else False 
+            more_disc = True if len(media.children) != len(media.tracks) else False
 
             for index, track_media in enumerate(media.children):
                 track_key = track_media.id or index
@@ -181,11 +187,11 @@ class ModuleYamlAlbum(ModuleYamlBase):
                     disc_index = cu['MediaContainer']['Metadata'][0]['parentIndex']
                 else:
                     disc_index = 1
-                
+
                 try:
-                    # 트랙 번호에 맞게 순서대로 있어야 함. 
+                    # 트랙 번호에 맞게 순서대로 있어야 함.
                     track_data = data['tracks'][str(disc_index)][str(track_media.index)]
-                except:
+                except Exception:
                     track_data = None
                     Log("NOT EXIST TRACK INFO: disc_index:%s track_index:%s", disc_index, track_media.index)
                 if track_data == None:
@@ -197,7 +203,7 @@ class ModuleYamlAlbum(ModuleYamlBase):
                 tmp = track_data.get('rating_count', None)
                 if tmp != None:
                     track_meta.rating_count = tmp
-                
+
                 tmp = track_data.get('singer', None)
                 title = track_data.get('title', None)
                 if tmp != None and tmp != '' and title != None:
@@ -219,15 +225,13 @@ class ModuleYamlAlbum(ModuleYamlBase):
                             )
                             metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format=lyric_data['format'], sort_order=lyric_index+1)
                             valid_keys[track_key].append(url)
-                except Exception as e: 
-                    Log('Exception:%s', e)
-                    Log(traceback.format_exc())
-                            
+                except Exception as e:
+                    Log.Exception(str(e))
+
             metadata.tracks.validate_keys(valid_track_keys)
             for key in metadata.tracks:
                 metadata.tracks[key].lyrics.validate_keys(valid_keys[key])
             return
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
+        except Exception as e:
+            Log.Exception(str(e))
         return False

@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata, time
+import time
 from .agent_base import AgentBase
 from .module_music_normal import ModuleMusicNormalArtist, ModuleMusicNormalAlbum
 from .module_audiobook import ModuleAudiobookArtist, ModuleAudiobookAlbum
 from .module_yaml_music import ModuleYamlArtist, ModuleYamlAlbum
 from .module_lyric import ModuleLyric
+
+Locale = Locale # type: Framework.api.localekit.LocaleKit
+Log = Log # type: Framework.api.logkit.LogKit
+MetadataSearchResult = MetadataSearchResult # type: Framework.objects.MetadataSearchResult
+Agent = Agent # type: Framework.api.agentkit.AgentKit
+
 
 class AgentArtist(Agent.Artist):
     name = "SJVA 설정"
@@ -13,7 +19,7 @@ class AgentArtist(Agent.Artist):
     #accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.localmediapatch', 'com.plexapp.agents.xbmcnfo']
     #contributes_to = ['com.plexapp.agents.xbmcnfo']
 
-    instance_list = { 
+    instance_list = {
         'S' : ModuleMusicNormalArtist(),
         'B' : ModuleAudiobookArtist(),
         'Y' : ModuleYamlArtist(),
@@ -26,7 +32,7 @@ class AgentArtist(Agent.Artist):
         if ret or key == 'Y':
             return
         self.instance_list[key].search(results, media, lang, manual)
-        
+
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)
         self.instance_list[metadata.id[0]].update(metadata, media, lang)
@@ -41,7 +47,7 @@ class AgentAlbum(Agent.Album):
     #accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.xbmcnfo']
     #contributes_to = ['com.plexapp.agents.xbmcnfo']
 
-    instance_list = { 
+    instance_list = {
         'S' : ModuleMusicNormalAlbum(),
         'B' : ModuleAudiobookAlbum(),
         'Y' : ModuleYamlAlbum(),
@@ -58,21 +64,20 @@ class AgentAlbum(Agent.Album):
             # 태그에서 읽는 것을 막기 위해 더미로 update타도록..
             results.Append(MetadataSearchResult(id='YD%s'% int(time.time()), name=media.title, year='', score=100, thumb='', lang=lang))
             return
-            
+
         self.instance_list[key].search(results, media, lang, manual)
-        
+
 
 
     def update(self, metadata, media, lang):
         Log('updata : %s', metadata.id)
         need_lyric = self.instance_list[metadata.id[0]].update(metadata, media, lang)
-        
-        if metadata.id[0] != 'Y':
+
+        if metadata.id[0] != 'Y' and self.instance_list[metadata.id[0]].is_yaml_enabled(media):
             need_lyric = self.instance_list['Y'].update(metadata, media, lang, is_primary=False)
-        
-        
+
+
         need_lyric = False
         if need_lyric:
             Log("가사 탐색")
             self.instance_list['L'].update(metadata, media, lang, is_primary=False)
-        

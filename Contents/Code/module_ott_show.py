@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata, urllib2
+import json
 from .agent_base import AgentBase
+
+Log = Log # type: Framework.api.logkit.LogKit
+Datetime = Datetime # Framework.api.utilkit.DatetimeKit
+FeaturetteObject = FeaturetteObject # type: Framework.modelling.objects.ModelInterfaceObjectMetaclass
+MetadataSearchResult = MetadataSearchResult # type: Framework.objects.MetadataSearchResult
 
 
 class ModuleOttShow(AgentBase):
@@ -17,7 +22,7 @@ class ModuleOttShow(AgentBase):
                 return
             Log(json.dumps(search_data, indent=4))
 
-            
+
             def func(show_list):
                 for idx, item in enumerate(show_list):
                     meta = MetadataSearchResult(id=item['code'], name=item['title'], score=item['score'], thumb=item['image_url'], lang=lang)
@@ -29,9 +34,8 @@ class ModuleOttShow(AgentBase):
             if 'wavve' in search_data:
                 func(search_data['wavve'])
 
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
+        except Exception as e:
+            Log.Exception(str(e))
 
 
 
@@ -50,8 +54,8 @@ class ModuleOttShow(AgentBase):
             metadata.genres.clear()
             for tmp in meta_info['genre']:
                 metadata.genres.add(tmp)
-            
-            
+
+
 
             # rating
             for item in meta_info['ratings']:
@@ -66,57 +70,46 @@ class ModuleOttShow(AgentBase):
                     actor = metadata.roles.new()
                     actor.role = item['role']
                     actor.name = item['name']
-                    actor.photo = item['thumb'] 
+                    actor.photo = item['thumb']
 
             # poster
-            ProxyClass = Proxy.Preview 
-            valid_names = []
-            poster_index = art_index = banner_index = 0
+            templates = {'poster': [metadata.posters, set()], 'landscape' : [metadata.art, set()], 'banner':[metadata.banners, set()]}
             for item in sorted(meta_info['thumb'], key=lambda k: k['score'], reverse=True):
-                valid_names.append(item['value'])
-                if item['aspect'] == 'poster':
-                    if item['thumb'] == '':
-                        metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=poster_index+1)
-                    else:
-                        metadata.posters[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=poster_index+1)
-                    poster_index = poster_index + 1
-                elif item['aspect'] == 'landscape':
-                    if item['thumb'] == '':
-                        metadata.art[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=art_index+1)
-                    else:
-                        metadata.art[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=art_index+1)
-                    art_index = art_index + 1
-                elif item['aspect'] == 'banner':
-                    if item['thumb'] == '':
-                        metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['value']).content, sort_order=banner_index+1)
-                    else:
-                        metadata.banners[item['value']] = ProxyClass(HTTP.Request(item['thumb']).content, sort_order=banner_index+1)
-                    banner_index = banner_index + 1  
+                image_url = item.get('value') or item.get('thumb')
+                aspect = item.get('aspect') or 'poster'
+                target = templates.get(aspect)
+                if not target or not image_url or image_url in target[1]:
+                    continue
+                if aspect == 'poster':
+                    self.set_http_data(image_url, metadata.posters, target[1], preview=item.get('thumb'))
+                elif aspect == 'landscape':
+                    self.set_http_data(image_url, metadata.art, target[1], preview=item.get('thumb'))
+                elif aspect == 'banner':
+                    self.set_http_data(image_url, metadata.banners, target[1], preview=item.get('thumb'))
 
-            metadata.posters.validate_keys(valid_names)
-            metadata.art.validate_keys(valid_names)
-            metadata.banners.validate_keys(valid_names)
+            metadata.posters.validate_keys(templates['poster'][1])
+            metadata.art.validate_keys(templates['landscape'][1])
+            metadata.banners.validate_keys(templates['banner'][1])
 
             tmp = [int(x) for x in meta_info['extra_info']['episodes'].keys()]
             no_list = sorted(tmp, reverse=True)
             module_prefs = self.get_module_prefs(self.module_name)
             for no in no_list:
                 info = meta_info['extra_info']['episodes'][str(no)]
-                Log(no)      
-                Log(info) 
+                Log(no)
+                Log(info)
 
                 for site in ['tving', 'wavve']:
                     if site in info:
                         url = 'sjva://sjva.me/playvideo/%s|%s' % (site, info[site]['code'])
                         title = info[site]['title'] if info[site]['title'] != '' else info[site]['plot']
                         extra_media = FeaturetteObject(
-                            url=url, 
+                            url=url,
                             title='%s회. %s' % (no, title),
                             thumb=info[site]['thumb'],
                         )
                         metadata.extras.add(extra_media)
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
+        except Exception as e:
+            Log.Exception(str(e))
 
 

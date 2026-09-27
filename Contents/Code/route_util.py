@@ -1,23 +1,26 @@
 # -*- coding: utf-8 -*-
 import json
 import os
-import re
 import time
 import traceback
-import unicodedata
-import urllib
 
 # /:/plugins/com.plexapp.agents.sjva_agent/function/version?X-Plex-Token=%s' % (server_url, server_token)
 from . import d
 
+JSON = JSON # type: Framework.api.parsekit.JSONKit
+Log = Log # type: Framework.api.logkit.LogKit
+Prefs = Prefs # type: Framework.api.runtimekit.PrefsKit
+Redirect = Redirect # type: Framework.objects.Redirect
+route = route # type: Framework.handlers.base.BaseHandler.route
+String = String # type: Framework.api.utilkit.StringKit
 
-@route('/version') 
+@route('/version')
 def version():
     from .version import VERSION
     return VERSION
 
 
-@route('/kakao') 
+@route('/kakao')
 def kakao(content_id):
     #content_id = '414068276'
     try:
@@ -26,11 +29,10 @@ def kakao(content_id):
         video_url = data['videoLocation']['url']
         Log('Kakao : %s', video_url)
         return Redirect(video_url)
-    except Exception as e: 
-        Log('Exception:%s', e)
-        Log(traceback.format_exc())
+    except Exception as e:
+        Log.Exception(str(e))
 
-@route('/wavve') 
+@route('/wavve')
 def wavve(sjva_url):
     try:
         data = JSON.ObjectFromURL(sjva_url)
@@ -38,34 +40,43 @@ def wavve(sjva_url):
         data = JSON.ObjectFromURL(url)
         video_url = data['playurl']
         return Redirect(video_url)
-    except Exception as e: 
-        Log('Exception:%s', e)
-        Log(traceback.format_exc())
+    except Exception as e:
+        Log.Exception(str(e))
 
 
 
 
 
-@route('/get_lyric') 
+@route('/get_lyric')
 def get_lyric(mode, filename, artist, track):
     Log('mode : %s  ' % (mode))
     Log('artist : %s  artist : %s' % (artist, track))
     lyric = ''
     if Prefs['server']:
         try:
-            url = '{ddns}/metadata/api/lyric/get_lyric?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex&apikey={apikey}'.format(ddns=Prefs['server'], mode=mode, filename=urllib.quote(filename.encode('utf8')), artist=urllib.quote(artist.encode('utf8')), track=urllib.quote(track.encode('utf8')), apikey=Prefs['apikey'])
-            data = JSON.ObjectFromURL(url, timeout=5000)
-            Log(data)
+            url = '{ddns}/metadata/api/lyric/get_lyric?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex'.format(
+                ddns=Prefs['server'],
+                mode=mode,
+                filename=String.Quote(filename.encode('utf-8')),
+                artist=String.Quote(artist.encode('utf-8')),
+                track=String.Quote(track.encode('utf-8'))
+            )
+            try:
+                timeout = int(Prefs['timeout'])
+            except Exception:
+                timeout = 300
+            data = JSON.ObjectFromURL(url, timeout=timeout, values={'apikey': Prefs['apikey']}, method="POST")
+            #Log(data)
             lyric = data['data'] if data['ret'] == 'success' else data['log']
-        except Exception as e: 
-            Log('Exception:%s', e)
+        except Exception as e:
+            Log.Exception(str(e))
             lyric = str(traceback.format_exc())
-    Log(lyric)
+    #Log(lyric)
     return lyric
 
 
 
-@route('/get_lyric2') 
+@route('/get_lyric2')
 def get_lyric2(mode, track_key):
     Log('mode : %s  ' % (mode))
     Log('track_key : %s' % (track_key))
@@ -78,26 +89,36 @@ def get_lyric2(mode, track_key):
             artist = data['MediaContainer']['Metadata'][0]['originalTitle']
             track = data['MediaContainer']['Metadata'][0]['title']
             filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
-            url = '{ddns}/metadata/api/lyric/get_lyric?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex&apikey={apikey}'.format(ddns=Prefs['server'], mode=mode, filename=urllib.quote(filename.encode('utf8')), artist=urllib.quote(artist.encode('utf8')), track=urllib.quote(track.encode('utf8')), apikey=Prefs['apikey'])
-            data = JSON.ObjectFromURL(url, timeout=5000)
+            url = '{ddns}/metadata/api/lyric/get_lyric?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex'.format(
+                ddns=Prefs['server'],
+                mode=mode,
+                filename=String.Quote(filename.encode('utf-8')),
+                artist=String.Quote(artist.encode('utf-8')),
+                track=String.Quote(track.encode('utf-8'))
+            )
+            try:
+                timeout = int(Prefs['timeout'])
+            except Exception:
+                timeout = 300
+            data = JSON.ObjectFromURL(url, timeout=timeout, values={'apikey': Prefs['apikey']}, method="POST")
             #Log(d(data))
             lyric = data['data'] if data['ret'] == 'success' else data['log']
-        except Exception as e: 
-            Log('Exception:%s', e)
+        except Exception as e:
+            Log.Exception(str(e))
             lyric = str(traceback.format_exc())
     #Log(lyric)
     return lyric
 
 
 
-@route('/music_normal_lyric') 
+@route('/music_normal_lyric')
 def music_normal_lyric(mode, song_id, track_key):
     Log('mode : %s  ' % (mode))
     Log('track_key : %s' % (track_key))
     Log('song_id : %s' % (song_id))
     lyric = ''
 
-    from .module_music_normal import ModuleMusicNormalAlbum 
+    from .module_music_normal import ModuleMusicNormalAlbum
     mod = ModuleMusicNormalAlbum()
     module_prefs = mod.get_module_prefs('music_normal')
     ddns = Prefs['server'] if module_prefs['server'] == '' else module_prefs['server']
@@ -112,25 +133,36 @@ def music_normal_lyric(mode, song_id, track_key):
             track = data['MediaContainer']['Metadata'][0]['title']
             filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
 
-            url = '{ddns}/metadata/api/music_normal/song?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex&apikey={apikey}&song_id={song_id}'.format(ddns=ddns, mode=mode, filename=urllib.quote(filename.encode('utf8')), artist=urllib.quote(artist.encode('utf8')), track=urllib.quote(track.encode('utf8')), apikey=apikey, song_id=song_id)
-            data = JSON.ObjectFromURL(url, timeout=5000)
+            url = '{ddns}/metadata/api/music_normal/song?mode={mode}&filename={filename}&artist={artist}&track={track}&call=plex&song_id={song_id}'.format(
+                ddns=ddns, 
+                mode=mode, 
+                filename=String.Quote(filename.encode('utf-8')),
+                artist=String.Quote(artist.encode('utf-8')),
+                track=String.Quote(track.encode('utf-8')),
+                song_id=song_id
+            )
+            try:
+                timeout = int(Prefs['timeout'])
+            except Exception:
+                timeout = 300
+            data = JSON.ObjectFromURL(url, timeout=timeout, values={'apikey': apikey}, method="POST")
             #Log(d(data))
             lyric = data['lyric'] if data['ret'] == 'success' else data['log']
-        except Exception as e: 
-            Log('Exception:%s', e)
+        except Exception as e:
+            Log.Exception(str(e))
             lyric = str(traceback.format_exc())
     return lyric
 
-@route('/music_normal_lyric') 
+@route('/music_normal_lyric')
 def yaml_lyric(track_key, lyric_index, album_key, track_code, disc_index, track_index):
     lyric = ''
     try:
-        from .module_yaml_music import ModuleYamlAlbum 
+        from .module_yaml_music import ModuleYamlAlbum
         mod = ModuleYamlAlbum()
         data = mod.yaml_load(mod.get_yaml_filepath(album_key, 'album'))
         lyric = data['tracks'][str(disc_index)][str(track_index)]['lyrics'][int(lyric_index)]['data']
-    except Exception as e: 
-        Log('Exception:%s', e)
+    except Exception as e:
+        Log.Exception(str(e))
         lyric = str(traceback.format_exc())
     return lyric
 
@@ -139,7 +171,7 @@ def d(data):
     return json.dumps(data, indent=4, ensure_ascii=False)
 
 
-@route('/get_folderpath') 
+@route('/get_folderpath')
 def get_folderpath(key):
     Log('key : %s  ' % key)
     try:
@@ -149,8 +181,8 @@ def get_folderpath(key):
         Log(d(data))
         content_type = data['MediaContainer']['Metadata'][0]['type']
         ret = {
-            'title':data['MediaContainer']['Metadata'][0]['title'], 
-            'section_title':data['MediaContainer']['librarySectionTitle'], 
+            'title':data['MediaContainer']['Metadata'][0]['title'],
+            'section_title':data['MediaContainer']['librarySectionTitle'],
             'section_id':data['MediaContainer']['librarySectionID']
         }
 
@@ -190,9 +222,8 @@ def get_folderpath(key):
             else:
                 ret['ret'] = 'show_error_not_exist_location'
         Log('get_folderpath 위치 : %s' % d(ret))
-    except Exception as e: 
-        Log('Exception:%s', e)
-        Log(traceback.format_exc())
+    except Exception as e:
+        Log.Exception(str(e))
         ret = {'ret':'exception', 'log':str(e)}
     return (ret)
 
@@ -228,11 +259,10 @@ def attach(url):
                     new.append("{prefix}/{line}".format(prefix=prefix,line=line))
                 else:
                     new.append("{prefix}/{line}?{attach}".format(prefix=prefix,line=line,attach=attach))
-        
+
         data = '\n'.join(new)
         return data
-    except Exception as e: 
-        Log('Exception:%s', e)
-        Log(traceback.format_exc())
+    except Exception as e:
+        Log.Exception(str(e))
 
 """

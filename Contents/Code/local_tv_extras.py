@@ -1,7 +1,13 @@
 #local media assets agent
-import os, string, re, unicodedata
-  
+import os, string, unicodedata
+
+Log = Log # type: Framework.api.logkit.LogKit
+Platform = Platform # type: Framework.api.runtimekit.PlatformKit
+Regex = Regex # type: Framework.api.utilkit.RegexKit
+Util = Util # type: Framework.api.utilkit.UtilKit
+
 extras_list = []
+
 
 def FindShowDir(dirs):
   final_dirs = {}
@@ -10,12 +16,12 @@ def FindShowDir(dirs):
     try:
       parent = os.path.split(dir)[0]
       final_dirs[parent] = True
-    except:pass
-  
+    except Exception:pass
+
   if final_dirs.has_key(''):
     del final_dirs['']
   return final_dirs
-  
+
 
 def AddExtra(extras, extra_type, extra_title, extra_path):
   try:
@@ -41,26 +47,26 @@ def AddExtra(extras, extra_type, extra_title, extra_path):
       extras.append({'type' : extra_type, 'title' : extra_title, 'sort_title' : sort_title, 'file' : extra_path, 'thumb' : image})
       extras_list.append(extra_path)
 
-  except:
-    Log('AddExtra exception')
-  
-  
+  except Exception as e:
+    Log.error('AddExtra exception: %s', str(e))
+
+
 def FindExtras(media_title, metadata, paths, basename=None):
   # Do a quick check to make sure we've got the extra types available in this framework version,
   # and that the server is new enough to support them.
   #
-  
-  try: 
+
+  try:
     t = InterviewObject()
     if Util.VersionAtLeast(Platform.ServerVersion, 0,9,9,13):
       find_extras = True
     else:
       find_extras = False
       Log('Not adding extras: Server v0.9.9.13+ required')
-  except NameError, e:
-    Log('Not adding extras: Framework v2.5.0+ required')
+  except NameError as e:
+    Log.error('Not adding extras: Framework v2.5.0+ required')
     find_extras = False
-    
+
   if find_extras:
     extra_type_map = {'trailer' : TrailerObject,
                 'deleted' : DeletedSceneObject,
@@ -73,11 +79,11 @@ def FindExtras(media_title, metadata, paths, basename=None):
                 'extra' : OtherObject}
     VIDEO_EXTS          = ['3g2', '3gp', 'asf', 'asx', 'avc', 'avi', 'avs', 'bivx', 'bup', 'divx', 'dv', 'dvr-ms', 'evo', 'fli', 'flv', 'm2t', 'm2ts', 'm2v', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts', 'nsv', 'nuv', 'ogm', 'ogv', 'tp', 'pva', 'qt', 'rm', 'rmvb', 'sdp', 'svq3', 'strm', 'ts', 'ty', 'vdr', 'viv', 'vob', 'vp3', 'wmv', 'wpl', 'wtv', 'xsp', 'xvid', 'webm']
     for path in paths:
-      #path = helpers.unicodize(path) 
+      #path = helpers.unicodize(path)
       extras = []
       re_strip = Regex('[\W ]+')
-      
-      Log('Looking for local extras in path: '+ path)      
+
+      Log('Looking for local extras in path: '+ path)
       for folder in os.listdir(path):
         d = os.path.join(path,folder)
         if(os.path.isdir(d)):
@@ -86,7 +92,7 @@ def FindExtras(media_title, metadata, paths, basename=None):
               for f in os.listdir(d):
                 Log(f)
                 (fn, ext) = os.path.splitext(f)
-                if not fn.startswith('.') and ext[1:].lower() in VIDEO_EXTS and (not basename or os.path.basename(path) == basename):                  
+                if not fn.startswith('.') and ext[1:].lower() in VIDEO_EXTS and (not basename or os.path.basename(path) == basename):
                   AddExtra(extras, key, fn, os.path.join(d, f))
 
       # Look for filenames following the "-extra" convention and a couple of other special cases.
@@ -109,16 +115,16 @@ def FindExtras(media_title, metadata, paths, basename=None):
                 while(title[0] in (' ','-')):
                   title = title[1:]
               AddExtra(extras, key, title, os.path.join(path, f))
-  
+
       # Make sure extras are sorted alphabetically and by type.
       type_order = ['trailer', 'behindthescenes', 'interview', 'deleted', 'scene', 'sample', 'featurette', 'short', 'other', 'extra']
       extras.sort(key=lambda e: e['sort_title'])
       extras.sort(key=lambda e: type_order.index(e['type']))
-      
+
       for extra in extras:
         metadata.extras.add(extra_type_map[extra['type']](title=extra['title'],file=extra['file'], thumb=extra['thumb']))
         Log(extra['file'])
-      
+
       Log('added %d extras' % len(metadata.extras))
       Log('finished')
 
@@ -135,22 +141,22 @@ def update(metadata, media):
       episodeMedia = media.seasons[s].episodes[e].items[0]
       directory = os.path.dirname(episodeMedia.parts[0].file)
       dirs[directory] = True
-      
+
   Log('directories are: %s', string.join(dirs, ", "))
-  
-  showfolder = False;
+
+  showfolder = False
   season_names = ['season','specials'] #default plex season folder names
   for d in dirs:
     if os.path.basename(d).lower().startswith(tuple(season_names)):
       Log("%s is a Season Folder", os.path.basename(d))
     else:
       Log("Folder name, %s doesn't include \"Season\", \"Specials\" (or any alternative specified in settings) so it must be a Show Folder", os.path.basename(d))
-      showfolder = True;
+      showfolder = True
 
   if(showfolder == False):
     try: dirs = FindShowDir(dirs)
-    except: dirs = []
-  
+    except Exception: dirs = []
+
   Log('directory to search for extras: %s', string.join(dirs, ", "))
 
   FindExtras(media.title, metadata, dirs)

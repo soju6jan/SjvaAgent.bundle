@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
-import os, unicodedata, traceback, io, time, urllib
+import os
 from collections import defaultdict
 from .agent_base import AgentBase
 
+Log = Log # type: Framework.api.logkit.LogKit
+MetadataSearchResult = MetadataSearchResult # type: Framework.objects.MetadataSearchResult
+Proxy = Proxy # type: Framework.api.modelkit.ProxyKit
+
+
 class ModuleLyric(AgentBase):
     module_name = 'lyric'
-    
+
     def search(self, results, media, lang, manual, **kwargs):
         results.Append(MetadataSearchResult(id = 'null', score = 100))
 
@@ -22,25 +27,23 @@ class ModuleLyric(AgentBase):
                 try:
                     for idx, mode in enumerate(['lrc', 'txt']):
                         url = 'http://127.0.0.1:32400/:/plugins/com.plexapp.agents.sjva_agent/function/get_lyric2?mode={mode}&track_key={track_key}'.format(
-                            mode = mode, 
+                            mode = mode,
                             track_key = track_key
                         )
                         metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = mode, sort_order=idx+1)
                         Log(url)
                         valid_keys[track_key].append(url)
-                except Exception as e: 
-                    Log('Exception:%s', e)
-                    Log(traceback.format_exc())
-                    #metadata.tracks[track_key].lyrics.validate_keys(valid_keys[track_key])  
-            Log(valid_keys)        
+                except Exception as e:
+                    Log.Exception(str(e))
+                    #metadata.tracks[track_key].lyrics.validate_keys(valid_keys[track_key])
+            Log(valid_keys)
             for key in metadata.tracks:
                 Log(key)
                 Log(valid_keys[key])
                 metadata.tracks[key].lyrics.validate_keys(valid_keys[key])
 
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
+        except Exception as e:
+            Log.Exception(str(e))
 
 
     """
@@ -63,25 +66,23 @@ class ModuleLyric(AgentBase):
                         try:
                             for idx, mode in enumerate(['lrc', 'txt']):
                                 url = 'http://127.0.0.1:32400/:/plugins/com.plexapp.agents.sjva_agent/function/get_lyric?mode={mode}&filename={filename}&artist={artist}&track={track}'.format(
-                                    mode = mode, 
-                                    filename = urllib.quote(os.path.basename(part.file).encode('utf8')), 
-                                    artist = urllib.quote(artist.encode('utf8')), 
+                                    mode = mode,
+                                    filename = urllib.quote(os.path.basename(part.file).encode('utf8')),
+                                    artist = urllib.quote(artist.encode('utf8')),
                                     track = urllib.quote(track.title.encode('utf8'))
                                 )
                                 metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = mode, sort_order=idx+1)
                                 valid_keys[track_key].append(url)
-                        except Exception as e: 
-                            Log('Exception:%s', e)
-                            Log(traceback.format_exc())
-                    #metadata.tracks[track_key].lyrics.validate_keys(valid_keys[track_key])  
-            Log(valid_keys)        
+                        except Exception as e:
+                            Log.Exception(str(e))
+                    #metadata.tracks[track_key].lyrics.validate_keys(valid_keys[track_key])
+            Log(valid_keys)
             for key in metadata.tracks:
                 Log(key)
                 Log(valid_keys[key])
                 metadata.tracks[key].lyrics.validate_keys(valid_keys[key])
 
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
+        except Exception as e:
+            Log.Exception(str(e))
     """
 

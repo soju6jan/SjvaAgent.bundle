@@ -1,24 +1,30 @@
 # -*- coding: utf-8 -*-
-import os, traceback, json, urllib, re, unicodedata, random, time
+import os, re, unicodedata
 from .agent_base import AgentBase
 from collections import defaultdict
+
+Log = Log # type: Framework.api.logkit.LogKit
+Datetime = Datetime # Framework.api.utilkit.DatetimeKit
+Proxy = Proxy # type: Framework.api.modelkit.ProxyKit
+MetadataSearchResult = MetadataSearchResult # type: Framework.objects.MetadataSearchResult
+String = String # type: Framework.api.utilkit.StringKit
 
 VARIOUS_ARTISTS_POSTER = 'https://music.plex.tv/pixogs/various_artists_poster.jpg'
 
 
 class ModuleMusicNormalArtist(AgentBase):
     module_name = 'music_normal_artist'
-    
+
     def search(self, results, media, lang, manual, **kwargs):
         try:
-            if media.artist == '[Unknown Artist]': 
+            if media.artist == '[Unknown Artist]':
                 return
             if media.artist.startswith('Various Artists_'):
                 #results.Append(MetadataSearchResult(id='SD%s' % int(time.time()), name= '[Various Artists]', thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
-                results.Append(MetadataSearchResult(id='SD%s' % urllib.quote(media.artist.replace('Various Artists_', '')), name= '[Various Artists]', thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
+                results.Append(MetadataSearchResult(id='SD%s' % String.Quote(media.artist.replace('Various Artists_', '')), name= '[Various Artists]', thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
                 return
             if media.artist.startswith('VA_'):
-                results.Append(MetadataSearchResult(id='SE%s' % urllib.quote(media.artist[3:].encode('utf8')), name= media.artist[3:], thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
+                results.Append(MetadataSearchResult(id='SE%s' % String.Quote(media.artist[3:].encode('utf8')), name= media.artist[3:], thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
                 return
 
             if manual and media.artist is not None and (media.artist.startswith('SA')):
@@ -37,14 +43,14 @@ class ModuleMusicNormalArtist(AgentBase):
                         meta = MetadataSearchResult(id=code, name=info_json['title'], year='', score=100, thumb="", lang=lang)
                         results.Append(meta)
                         return
-            
+
             # 동명이인... 폴더에 있는 [MA1234] 처리
             json_path = self.get_json_filepath(media)
             album_basename = os.path.basename(os.path.dirname(json_path))
             match = re.search("\[MA(?P<code>\d+)\]", album_basename)
             if match:
                 meta = MetadataSearchResult(id='SA%s' % match.group('code'), name=album_basename, year='', score=100, thumb='', lang=lang)
-                results.Append(meta) 
+                results.Append(meta)
 
             if manual:
                 keyword = '%s|%s' % (media.artist, media.album)
@@ -57,23 +63,19 @@ class ModuleMusicNormalArtist(AgentBase):
                 meta = MetadataSearchResult(id=item['code'], name=item['artist'], year='', score=item['score'], thumb=item['image'], lang=lang)
                 meta.summary = self.change_html('Desc : {}\n'.format(item['desc']))
                 meta.type = "movie"
-                results.Append(meta) 
+                results.Append(meta)
 
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())    
+        except Exception as e:
+            Log.Exception(str(e))
 
     def update(self, metadata, media, lang):
         code = metadata.id
-        if code.startswith('SD'):
-            metadata.title = '[Various Artists]'
+        if code.startswith('SD') or code.startswith('SE'):
+            metadata.title = '[Various Artists]' if code.startswith('SD') else String.Unquote(code[2:])
             metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
-            metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
-            return
-        if code.startswith('SE'):
-            metadata.title = urllib.unquote(code[2:])
-            metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
-            metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
+            valid_names = set()
+            self.set_http_data(VARIOUS_ARTISTS_POSTER, metadata.posters, valid_names)
+            metadata.posters.validate_keys(valid_names)
             return
         data = None
         if self.is_read_json(media):
@@ -85,19 +87,23 @@ class ModuleMusicNormalArtist(AgentBase):
             Log("JSON WRITE : %s", self.is_write_json(media))
             if data is not None and self.is_write_json(media):
                 self.save_info(media, data)
-        
+
         #data = self.send_info(self.module_name, code)
         #Log(self.d(data))
-        
+
         metadata.title = data['title']
         metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
         metadata.summary = '%s\n%s' % (data['desc'], data['info_desc'])
 
+        valid_names = set()
         for poster in data['poster']:
-            metadata.posters[poster] = Proxy.Media(HTTP.Request(poster))
-            
+            self.set_http_data(poster, metadata.posters, valid_names)
+        metadata.posters.validate_keys(valid_names)
+
+        valid_names = set()
         for art in data['art']:
-            metadata.art[art] = Proxy.Media(HTTP.Request(art))
+            self.set_http_data(art, metadata.art, valid_names)
+        metadata.art.validate_keys(valid_names)
         metadata.genres = data['genres']
         metadata.countries = data['countries']
         self.set_data_extras(metadata, data, 'extras', True)
@@ -126,7 +132,7 @@ class ModuleMusicNormalArtist(AgentBase):
 
 class ModuleMusicNormalAlbum(AgentBase):
     module_name = 'music_normal_album'
-    
+
     def search(self, results, media, lang, manual, **kwargs):
         if manual and media.name is not None and (media.name.startswith('SM')):
             code = media.name
@@ -149,7 +155,7 @@ class ModuleMusicNormalAlbum(AgentBase):
         artist_name = media.parent_metadata.title
         Log('artist_code: %s', artist_code)
         Log('artist_name: %s', artist_name)
-        
+
         # 폴더명에 있는 날짜
         album_folder_name = os.path.basename(os.path.dirname(self.get_json_filepath(media)))
         pub_date = date_from_target(album_folder_name)
@@ -174,7 +180,7 @@ class ModuleMusicNormalAlbum(AgentBase):
             meta = MetadataSearchResult(id=item['code'], name=item['title'], year='', score=item['score'], thumb=item['image'], lang=lang)
             meta.summary = self.change_html('{}\n'.format(item['desc']))
             meta.type = "movie"
-            results.Append(meta) 
+            results.Append(meta)
 
 
 
@@ -189,7 +195,7 @@ class ModuleMusicNormalAlbum(AgentBase):
             data = self.send_info(self.module_name, code)
             if data is not None and self.is_write_json(media):
                 self.save_info(media, data)
-        
+
         #metadata.title = '[%s] %s' % (data['album_type'], data['title'])
 
         #Log(self.d(data))
@@ -201,9 +207,8 @@ class ModuleMusicNormalAlbum(AgentBase):
             #tmp = u'%s' % data['titie'] 1818181818
             tmp = unicode(data['title'])
             metadata.title_sort = unicodedata.normalize('NFKD', tmp)
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
+        except Exception as e:
+            Log.Exception(str(e))
             new_string = ''.join(char for char in data['title'] if char.isalnum() or char == ' ')
             metadata.title_sort = unicodedata.normalize('NFKD', new_string)
             # 특수문자 때문에
@@ -213,19 +218,22 @@ class ModuleMusicNormalAlbum(AgentBase):
             #for i in len(tmp):
             #    if tmp[i] == ' ' or tmp[i].isalnum():
             #        new.append(tmp[i])
-            
+
             #metadata.title_sort = unicodedata.normalize('NFKD', new_string)
 
         metadata.summary = '%s\n%s' % (data['desc'], data['info_desc'])
 
-        metadata.posters[data['image']] = Proxy.Media(HTTP.Request(data['image']))
+        valid_names = set()
+        self.set_http_data(data['image'], metadata.posters, valid_names)
+        metadata.posters.validate_keys(valid_names)
+
         metadata.genres = [data['album_type']] + data['genres']
         try: metadata.rating = float(data['rating']) *2
-        except: pass
+        except Exception: pass
 
         metadata.studio = data['studio']
         metadata.originally_available_at = Datetime.ParseDate(data['originally_available_at']).date()
-        
+
 
         valid_track_keys = []
         valid_keys = defaultdict(list)
@@ -233,9 +241,9 @@ class ModuleMusicNormalAlbum(AgentBase):
         Log("media.children : %s", len(media.children))
         Log("media.tracks : %s", len(media.tracks))
 
-        more_disc = True if len(media.children) != len(media.tracks) else False 
+        more_disc = True if len(media.children) != len(media.tracks) else False
 
-        
+
         #for index in media.tracks:
         artist_code = None
         for index, track_media in enumerate(media.children):
@@ -250,7 +258,7 @@ class ModuleMusicNormalAlbum(AgentBase):
                 disc_index = cu['MediaContainer']['Metadata'][0]['parentIndex']
             else:
                 disc_index = 1
-            
+
             if artist_code == None:
                 tmp = AgentBase.my_JSON_ObjectFromURL('http://127.0.0.1:32400/library/metadata/%s?includeChildren=1' % track_key)
                 #Log(self.d(tmp))
@@ -265,7 +273,7 @@ class ModuleMusicNormalAlbum(AgentBase):
 
             try:
                 track_data = data['track'][disc_index-1][int(track_media.index)-1]
-            except:
+            except Exception:
                 track_data = None
                 Log("ERROR: disc_index %s %s", disc_index, track_media.index)
 
@@ -300,11 +308,11 @@ class ModuleMusicNormalAlbum(AgentBase):
 
             if track_data['song_id'] == '':
                 continue
-            try: 
+            try:
                 for idx, mode in enumerate(['txt']):
                     url = 'http://127.0.0.1:32400/:/plugins/com.plexapp.agents.sjva_agent/function/music_normal_lyric?mode={mode}&song_id={song_id}&track_key={track_key}'.format(
                         mode = mode,
-                        song_id = track_data['song_id'], 
+                        song_id = track_data['song_id'],
                         track_key = track_key,
                     )
                     metadata.tracks[track_key].lyrics[url] = Proxy.Remote(url, format = mode, sort_order=idx+1)
@@ -316,30 +324,29 @@ class ModuleMusicNormalAlbum(AgentBase):
                         Log(url)
                         metadata.tracks[track_key].extras.add(
                             self.extra_map['musicvideo'](
-                                url=extra_url, 
+                                url=extra_url,
                                 title='11출발 뮤직비디오',
                                 thumb='',
                             )
                         )
                     """
-            except Exception as e: 
-                Log('Exception:%s', e)
-                Log(traceback.format_exc())
-                #metadata.tracks[track_key].lyrics.validate_keys(valid_keys[track_key])  
-                
+            except Exception as e:
+                Log.Exception(str(e))
+                #metadata.tracks[track_key].lyrics.validate_keys(valid_keys[track_key])
+
         metadata.tracks.validate_keys(valid_track_keys)
 
         for key in metadata.tracks:
             #Log(key)
             #Log(valid_keys[key])
             metadata.tracks[key].lyrics.validate_keys(valid_keys[key])
-        
+
         # 에이전트에서 컬렉션 세팅이 안됨.
         #if data['album_type'] == 'OST' and 'Part' in data['title'] and 'OST' in data['title']:
         #    #data['collections'] = [data['title'].split('OST')[0].strip()]
         #    metadata.collections.clear()
         #    metadata.collections.add(data['title'].split('OST')[0].strip())
-        
+
         #artist_code = media.parent_metadata.id
         Log(artist_code)
         Log(artist_code)
@@ -352,7 +359,7 @@ class ModuleMusicNormalAlbum(AgentBase):
         return False
 
 
-    
+
 
 
 
@@ -368,20 +375,20 @@ def date_from_target(target):
         year = int(match.group('year'))
         if year < 1900 or year > 2100:
             return ''
-        
+
         if 'month' not in match.groupdict():
             return str(year)
         month = int(match.group('month'))
         if month < 1 or month > 12:
             return str(year)
-        
+
         if 'day' not in match.groupdict():
             return str(year) + str(month).zfill(2)
         day = int(match.group('day'))
         if day < 1 or day > 31:
             return str(year) + str(month).zfill(2)
-        
+
         return str(year) + str(month).zfill(2) + str(day).zfill(2)
-    except:
+    except Exception:
         return ''
 

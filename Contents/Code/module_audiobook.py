@@ -1,19 +1,25 @@
 # -*- coding: utf-8 -*-
-import os, unicodedata, urllib, traceback, re, time
+import os, unicodedata, re, time
 from .agent_base import AgentBase
+
+Log = Log # type: Framework.api.logkit.LogKit
+Datetime = Datetime # Framework.api.utilkit.DatetimeKit
+MetadataSearchResult = MetadataSearchResult # type: Framework.objects.MetadataSearchResult
+String = String # type: Framework.api.utilkit.StringKit
+
 VARIOUS_ARTISTS_POSTER = 'https://music.plex.tv/pixogs/various_artists_poster.jpg'
 
 # 정상 : BN코드A / BN코드
 # VA : BA앨범이름 / BB앨범이름
 class ModuleAudiobookArtist(AgentBase):
     module_name = 'book'
-    
+
     def search(self, results, media, lang, manual, **kwargs):
         try:
             if media.artist.startswith('Various Artists_'):
-                results.Append(MetadataSearchResult(id='BA%s' % urllib.quote(media.artist.replace('Various Artists_', '')), name= '[Various Artists]', thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
+                results.Append(MetadataSearchResult(id='BA%s' % String.Quote(media.artist.replace('Various Artists_', '')), name= '[Various Artists]', thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
                 return
-                
+
             if self.is_read_json(media):
                 if manual:
                     self.remove_info(media)
@@ -41,17 +47,16 @@ class ModuleAudiobookArtist(AgentBase):
             Log('검색어 : %s', keyword)
             data = self.send_search(self.module_name, keyword, manual)
             if data == None:
-                results.Append(MetadataSearchResult(id='BE%s' % urllib.quote(media.artist), name= media.artist, thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
+                results.Append(MetadataSearchResult(id='BE%s' % String.Quote(media.artist), name= media.artist, thumb = VARIOUS_ARTISTS_POSTER, lang  = lang, score = 100))
                 return
 
             for item in data:
                 meta = MetadataSearchResult(id=item['code'] + 'A', name=item['author'], year='', score=item['score'], thumb=item['image'], lang=lang)
                 meta.summary = self.change_html('작품 : {}\n'.format(item['title']) + self.search_result_line() + item['description'])
                 meta.type = "movie"
-                results.Append(meta) 
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())    
+                results.Append(meta)
+        except Exception as e:
+            Log.Exception(str(e))
 
 
 
@@ -60,16 +65,13 @@ class ModuleAudiobookArtist(AgentBase):
             # 수동 일치항목 찾기로 변경할 수가 없다.
             # 앨범에 있는 json 을 지우자니 앨범 데이터가 문제고..
             # 작가가 없는 경우 새로 입힐 방법이 없음
+            valid_names = set()
             code = metadata.id
-            if code.startswith('BA'):
-                metadata.title = '[Various Artists]'
+            if code.startswith('BA') or code.startswith('BE'):
+                metadata.title = '[Various Artists]' if code.startswith('BA') else String.Unquote(code[2:])
                 metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
-                metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
-                return
-            if code.startswith('BE'):
-                metadata.title = urllib.unquote(code[2:])
-                metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
-                metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
+                self.set_http_data(VARIOUS_ARTISTS_POSTER, metadata.posters, valid_names)
+                metadata.posters.validate_keys(valid_names)
                 return
             data = None
             if self.is_read_json(media):
@@ -80,7 +82,7 @@ class ModuleAudiobookArtist(AgentBase):
                 data = self.send_info(self.module_name, code[:-1])
                 if data is not None and self.is_write_json(media):
                     self.save_info(media, data)
-            
+
             #data = self.send_info(self.module_name, code)
             Log(self.d(data))
             if 'author' in data:
@@ -89,11 +91,11 @@ class ModuleAudiobookArtist(AgentBase):
             if 'author_intro' in data:
                 metadata.summary = data['author_intro']
             if 'poster' in data:
-                metadata.posters[data['poster']] = Proxy.Media(HTTP.Request(data['poster']))
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc()) 
-        
+                self.set_http_data(data['poster'], metadata.posters, valid_names)
+                metadata.posters.validate_keys(valid_names)
+        except Exception as e:
+            Log.Exception(str(e))
+
 
 
 
@@ -119,7 +121,7 @@ class ModuleAudiobookArtist(AgentBase):
 
 class ModuleAudiobookAlbum(AgentBase):
     module_name = 'book'
-    
+
     def search(self, results, media, lang, manual, **kwargs):
         try:
             artist_code = media.parent_metadata.id
@@ -127,7 +129,7 @@ class ModuleAudiobookAlbum(AgentBase):
             Log('artist_code: %s', artist_code)
             Log('artist_name: %s', artist_name)
             if artist_code != None and artist_code.startswith('BA') and manual == False:
-                meta = MetadataSearchResult(id='BB' + artist_code[2:], name=urllib.unquote(artist_code[2:]), year='', score=100, thumb="", lang=lang)
+                meta = MetadataSearchResult(id='BB' + artist_code[2:], name=String.Unquote(artist_code[2:]), year='', score=100, thumb="", lang=lang)
                 results.Append(meta)
                 return
 
@@ -167,10 +169,9 @@ class ModuleAudiobookAlbum(AgentBase):
                 meta = MetadataSearchResult(id=item['code'], name=item['title'], year='', score=item['score'], thumb=item['image'], lang=lang)
                 meta.summary = self.change_html('작가 : {}\n'.format(item['author']) + self.search_result_line() + item['description'])
                 meta.type = "movie"
-                results.Append(meta) 
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())    
+                results.Append(meta)
+        except Exception as exception:
+            Log.Exception(str(exception))
 
 
     def set_track(self, metadata, media):
@@ -189,19 +190,15 @@ class ModuleAudiobookAlbum(AgentBase):
         try:
             data = None
             code = metadata.id
-            if code.startswith('BB'):
-                metadata.title = urllib.unquote(code[2:])
+            if code.startswith('BB') or code.startswith('BD'):
+                metadata.title = String.Unquote(code[2:]) if code.startswith('BB') else media.title
                 metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
-                metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
+                valid_names = set()
+                self.set_http_data(VARIOUS_ARTISTS_POSTER, metadata.posters, valid_names)
+                metadata.posters.validate_keys(valid_names)
                 self.set_track(metadata, media)
                 return
-            if code.startswith('BD'):
-                metadata.title = media.title
-                metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
-                metadata.posters[VARIOUS_ARTISTS_POSTER] = Proxy.Media(HTTP.Request(VARIOUS_ARTISTS_POSTER))
-                self.set_track(metadata, media)
-                return
-                
+
 
             if self.is_read_json(media):
                 info_json = self.get_info_json(media)
@@ -216,12 +213,15 @@ class ModuleAudiobookAlbum(AgentBase):
             metadata.title = data['title']
             metadata.title_sort = unicodedata.normalize('NFKD', metadata.title)
             metadata.summary = data['desc']
-            metadata.posters[data['poster']] = Proxy.Media(HTTP.Request(data['poster']))
+            valid_names = set()
+            self.set_http_data(data['poster'], metadata.posters, valid_names)
+            metadata.posters.validate_keys(valid_names)
+
             metadata.rating = float(data['ratings'])
             metadata.studio = data.get('publisher', '')
             if 'premiered' in data:
                 metadata.originally_available_at = Datetime.ParseDate(data['premiered']).date()
-            
+
             valid_track_keys = []
             for index in media.tracks:
                 filename = os.path.splitext(os.path.basename(media.tracks[index].items[0].parts[0].file))[0]
@@ -231,6 +231,5 @@ class ModuleAudiobookAlbum(AgentBase):
                 t.title = filename.strip(' -._')
                 t.original_title = data.get('author', '')
             metadata.tracks.validate_keys(valid_track_keys)
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())    
+        except Exception as exception:
+            Log.Exception(str(exception))

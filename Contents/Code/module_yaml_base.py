@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
-import json
 import os
 import re
-import time
-import traceback
 import unicodedata
-import urllib
-from io import open
 
 from .agent_base import AgentBase
 
+Log = Log # type: Framework.api.logkit.LogKit
+Datetime = Datetime # Framework.api.utilkit.DatetimeKit
+Prefs = Prefs # type: Framework.api.runtimekit.PrefsKit
+
 
 class ModuleYamlBase(AgentBase):
-    
+
     def get_yaml_filepath(self, media, content_type):
         try:
             metadata_key = media if type(media) == type('') else media.id
@@ -84,7 +83,7 @@ class ModuleYamlBase(AgentBase):
                 filename = data['MediaContainer']['Metadata'][0]['Media'][0]['Part'][0]['file']
                 parent = os.path.split(os.path.dirname(filename))[1]
                 match = re.match('CD(?P<disc>\d+)', parent, re.IGNORECASE)
-                    
+
                 if match:
                     album_root = os.path.dirname(os.path.dirname(filename))
                 else:
@@ -114,18 +113,17 @@ class ModuleYamlBase(AgentBase):
 
                 if os.path.exists(yaml_filepath):
                     return yaml_filepath
-                
-        except Exception as e: 
-            Log('Exception:%s', e)
-            Log(traceback.format_exc())
 
-    
+        except Exception as e:
+            Log.Exception(str(e))
+
+
     def get(self, data, field, default):
         ret = data.get(field, None)
         if ret is None or ret == '':
             ret = default
         return ret
-    
+
     def get_bool(self, data, field, default):
         ret = data.get(field, None)
         if ret is None or ret == '':
@@ -135,7 +133,7 @@ class ModuleYamlBase(AgentBase):
         elif ret.lower() in ['false']:
             return False
         return ret
-    
+
     def get_list(self, data, field):
         ret = data.get(field, None)
         if ret is None:
@@ -144,7 +142,7 @@ class ModuleYamlBase(AgentBase):
             if type(ret) != type([]):
                 ret = [x.strip() for x in ret.split(',')]
         return ret
-    
+
     def get_person_list(self, data, field):
         ret = data.get(field, None)
         if ret is None:
@@ -173,7 +171,7 @@ class ModuleYamlBase(AgentBase):
                         if insert_index > -1:
                             tmp[insert_index]['url'] = '%s,%s' % (tmp[insert_index]['url'], value)
                 ret = tmp
-        return ret 
+        return ret
 
     # 포인터가 아니다. 변수의 값이 넘어와버린다
     # setattr로 클래스 변수 값을 셋한다.
@@ -183,6 +181,11 @@ class ModuleYamlBase(AgentBase):
         try:
             #Log('set_data : %s', field)
             value = self.get(data, field, None)
+            # u'null' 값이 ParseDate()에 입력되면 오류 발생
+            if value == 'null':
+                Log.Error("%s - %s %s", field, value, type(value))
+                value = None
+                return
             if value is not None:
                 if field == 'title_sort':
                     value = unicodedata.normalize('NFKD', value)
@@ -195,9 +198,8 @@ class ModuleYamlBase(AgentBase):
                 setattr(meta, field, value)
             elif is_primary:
                 setattr(meta, field, None)
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())    
+        except Exception as exception:
+            Log.Exception(str(exception))
 
 
     def set_data_list(self, meta, data, field, is_primary):
@@ -211,9 +213,8 @@ class ModuleYamlBase(AgentBase):
             elif is_primary:
                 meta.clear()
 
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())
+        except Exception as exception:
+            Log.Exception(str(exception))
 
     def set_data_person(self, meta, data, field, is_primary):
         try:
@@ -237,42 +238,36 @@ class ModuleYamlBase(AgentBase):
             elif is_primary:
                 meta.clear()
 
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())
+        except Exception as exception:
+            Log.Exception(str(exception))
 
     def set_data_media(self, meta, data, field, is_primary):
         try:
             meta = getattr(meta, field)
+            valid_names = set()
             value = self.get_media_list(data, field)
             if len(value) > 0:
-                valid_names = []
-                for idx, media in enumerate(value):
-                    if 'thumb' in media:
-                        tmp = media['thumb']
-                        valid_names.append(media['thumb'])
-                    else:
-                        tmp = media['url']
-                        valid_names.append(media['url'])
+                for media in value:
+                    image_url = media.get('url') or media.get('thumb')
+                    if not image_url or image_url in valid_names:
+                        continue
                     try:
-                        if tmp != None and tmp.startswith('http') == False:
+                        if image_url and image_url.startswith('http') == False:
                             ddns = Prefs['server'].rstrip('/')
-                            tmp = tmp.lstrip('/')
-                            tmp = ddns + '/' + tmp
-                        elif tmp.startswith('https://cdn.discordapp.com/attachments'):
+                            image_url = image_url.lstrip('/')
+                            image_url = ddns + '/' + image_url
+                        elif image_url.startswith('https://cdn.discordapp.com/attachments'):
                             ddns = Prefs['server'].rstrip('/')
-                            tmp = tmp.replace('https://cdn.discordapp.com', ddns)
-                        meta[tmp] = Proxy.Preview(HTTP.Request(tmp).content, sort_order=idx+1)
-                    except Exception as e:
-                        Log('Exception:%s', e)
+                            image_url = image_url.replace('https://cdn.discordapp.com', ddns)
+                        self.set_http_data(image_url, meta, valid_names, preview=media.get('thumb'))
+                    except Exception:
+                        Log.Exception('')
+            if is_primary:
                 meta.validate_keys(valid_names)
-            elif is_primary:
-                meta.validate_keys([])
             #Log(meta)
 
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())
+        except Exception as e:
+            Log.Exception(str(e))
 
     def set_data_reviews(self, meta, data, field, is_primary):
         try:
@@ -289,10 +284,9 @@ class ModuleYamlBase(AgentBase):
                     r.text = self.get(review, 'text', None)
             elif is_primary:
                 meta.clear()
-          
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())
+
+        except Exception as exception:
+            Log.Exception(str(exception))
 
     def set_data_extras(self, meta, data, field, is_primary):
         try:
@@ -307,7 +301,7 @@ class ModuleYamlBase(AgentBase):
                     url = 'sjva://sjva.me/playvideo/%s|%s' % (mode, extra_url)
                     meta.add(
                         extra_class(
-                            url=url, 
+                            url=url,
                             title=self.change_html(extra.get('title', '')),
                             originally_available_at = Datetime.ParseDate(self.get(extra, 'originally_available_at', '1900-12-31')).date(),
                             thumb=self.get(extra, 'thumb', '')
@@ -317,7 +311,6 @@ class ModuleYamlBase(AgentBase):
                 #Log(meta)
                 #meta.clear()
                 pass
-        except Exception as exception: 
-            Log('Exception:%s', exception)
-            Log(traceback.format_exc())
+        except Exception as exception:
+            Log.Exception(str(exception))
 
